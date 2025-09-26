@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            padding: 30px 20px;
+            background: white;
+        }
+        .order-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .tracking-info {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .tracking-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+            font-family: 'Courier New', monospace;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #28a745;
+            color: white;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Order Confirmation ✅</h1>
+        <p>Thank you for your purchase!</p>
+    </div>
+    <div class="content">
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+        <p>Your order has been successfully received and is being processed. Here are your order details:</p>
+
+        <div class="order-details">
+            <div class="detail-row">
+                <span><strong>Order Number:</strong></span>
+                <span th:text="${orderNumber}">ORD-123456</span>
+            </div>
+            <div class="detail-row">
+                <span><strong>Order Date:</strong></span>
+                <span th:text="${#temporals.format(#temporals.createNow(), 'dd MMMM yyyy')}">26 September 2025</span>
+            </div>
+            <div class="detail-row">
+                <span><strong>Total Amount:</strong></span>
+                <span><strong th:text="'$' + ${#numbers.formatDecimal(totalAmount, 1, 2)}">$99.99</strong></span>
+            </div>
+            <div class="detail-row">
+                <span><strong>Order Status:</strong></span>
+                <span class="status-badge">Confirmed</span>
+            </div>
+        </div>
+
+        <div th:if="${trackingNumber}" class="tracking-info">
+            <h3>📦 Tracking Information</h3>
+            <p>Your order has been shipped! Track your package using the number below:</p>
+            <p class="tracking-number" th:text="${trackingNumber}">TRK-789654123</p>
+            <p><small>Estimated delivery: 3-5 business days</small></p>
+        </div>
+
+        <p>We'll send you another email when your order ships. You can track your order status anytime from your account dashboard.</p>
+
+        <p>If you have any questions about your order, please contact our support team with your order number.</p>
+
+        <p>Thank you for shopping with us!<br><strong>The E-Commerce Team</strong></p>
+    </div>
+    <div class="footer">
+        <p>&copy; <span th:text="${currentYear}">2024</span> E-Commerce Platform. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>
