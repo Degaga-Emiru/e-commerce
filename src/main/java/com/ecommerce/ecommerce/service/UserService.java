@@ -1,6 +1,4 @@
 package com.ecommerce.ecommerce.service;
-
-
 import com.ecommerce.ecommerce.dto.RegisterRequest;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.UserRole;
@@ -165,9 +163,9 @@ public class UserService {
     }
 
     public List<User> searchUsers(String query) {
-        return userRepository.findByEmailContainingIgnoreCaseOrFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                query, query, query);
+        return userRepository.searchUsers(query);
     }
+
     // new class
     public String initiatePasswordReset(String email) {
         User user = getUserByEmail(email);

@@ -1,14 +1,12 @@
 package com.ecommerce.ecommerce.service;
-package com.ecommerce.service;
-
-import com.ecommerce.dto.ProductDto;
-import com.ecommerce.entity.Product;
-import com.ecommerce.entity.ProductStatus;
-import com.ecommerce.entity.User;
-import com.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.repository.ProductRepository;
-import com.ecommerce.repository.CategoryRepository;
-import com.ecommerce.repository.UserRepository;
+import com.ecommerce.ecommerce.dto.ProductDto;
+import com.ecommerce.ecommerce.entity.Product;
+import com.ecommerce.ecommerce.entity.ProductStatus;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.ecommerce.repository.ProductRepository;
+import com.ecommerce.ecommerce.repository.CategoryRepository;
+import com.ecommerce.ecommerce.repository.UserRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,8 +62,8 @@ public class ProductService {
         User seller = userRepository.findById(sellerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Seller not found with id: " + sellerId));
 
-        if (!seller.getRole().equals(com.ecommerce.entity.UserRole.SELLER) &&
-                !seller.getRole().equals(com.ecommerce.entity.UserRole.ADMIN)) {
+        if (!seller.getRole().equals(com.ecommerce.ecommerce.entity.UserRole.SELLER) &&
+                !seller.getRole().equals(com.ecommerce.ecommerce.entity.UserRole.ADMIN)) {
             throw new RuntimeException("User is not authorized to create products");
         }
 

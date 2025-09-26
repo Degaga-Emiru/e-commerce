@@ -1,6 +1,4 @@
 package com.ecommerce.ecommerce.controller;
-
-
 import com.ecommerce.ecommerce.entity.Product;
 import com.ecommerce.ecommerce.service.ProductService;
 import org.springframework.data.domain.Page;
@@ -10,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.ecommerce.ecommerce.dto.ApiResponse;
 
 import java.math.BigDecimal;
 import java.util.HashMap;

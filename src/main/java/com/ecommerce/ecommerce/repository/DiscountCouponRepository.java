@@ -1,5 +1,5 @@
 package com.ecommerce.ecommerce.repository;
-import com.ecommerce.entity.DiscountCoupon;
+import com.ecommerce.ecommerce.entity.DiscountCoupon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

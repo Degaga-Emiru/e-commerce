@@ -1,7 +1,5 @@
 package com.ecommerce.ecommerce.dto;
 
-package com.ecommerce.dto;
-
 import java.time.LocalDateTime;
 
 public class ReviewDto {
@@ -15,8 +13,14 @@ public class ReviewDto {
     private String comment;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean verifiedPurchase;
+    private Boolean verifiedPurchase;
+    private Integer helpfulVotes;
+    private Integer totalVotes;
+    private Double helpfulPercentage;
+    private String ratingStars;
+    private Boolean canEdit;
 
+    // Constructors
     public ReviewDto() {}
 
     // Getters and Setters
@@ -50,6 +54,21 @@ public class ReviewDto {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
-    public boolean isVerifiedPurchase() { return verifiedPurchase; }
-    public void setVerifiedPurchase(boolean verifiedPurchase) { this.verifiedPurchase = verifiedPurchase; }
+    public Boolean getVerifiedPurchase() { return verifiedPurchase; }
+    public void setVerifiedPurchase(Boolean verifiedPurchase) { this.verifiedPurchase = verifiedPurchase; }
+
+    public Integer getHelpfulVotes() { return helpfulVotes; }
+    public void setHelpfulVotes(Integer helpfulVotes) { this.helpfulVotes = helpfulVotes; }
+
+    public Integer getTotalVotes() { return totalVotes; }
+    public void setTotalVotes(Integer totalVotes) { this.totalVotes = totalVotes; }
+
+    public Double getHelpfulPercentage() { return helpfulPercentage; }
+    public void setHelpfulPercentage(Double helpfulPercentage) { this.helpfulPercentage = helpfulPercentage; }
+
+    public String getRatingStars() { return ratingStars; }
+    public void setRatingStars(String ratingStars) { this.ratingStars = ratingStars; }
+
+    public Boolean getCanEdit() { return canEdit; }
+    public void setCanEdit(Boolean canEdit) { this.canEdit = canEdit; }
 }

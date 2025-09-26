@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.service;
+import com.ecommerce.ecommerce.dto.ReviewDto;
 import com.ecommerce.ecommerce.entity.Review;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.Product;
@@ -35,7 +36,7 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
+                .orElseThrow();
 
         // Check if user has already reviewed this product
         if (reviewRepository.findByUserIdAndProductId(userId, productId).isPresent()) {
@@ -61,7 +62,7 @@ public class ReviewService {
                     .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
 
             if (order.getUser().getId().equals(userId) &&
-                    order.getStatus() == com.ecommerce.entity.OrderStatus.DELIVERED) {
+                    order.getStatus() == com.ecommerce.ecommerce.entity.OrderStatus.DELIVERED) {
                 review.setOrder(order);
                 review.setVerifiedPurchase(true);
             }
@@ -126,5 +127,27 @@ public class ReviewService {
 
     public boolean hasUserReviewedProduct(Long userId, Long productId) {
         return reviewRepository.findByUserIdAndProductId(userId, productId).isPresent();
+    }
+    // In your ReviewService class
+    public ReviewDto convertToDto(Review review) {
+        ReviewDto dto = new ReviewDto();
+        dto.setId(review.getId());
+        dto.setUserId(review.getUser().getId());
+        dto.setUserName(review.getUser().getFirstName() + " " + review.getUser().getLastName());
+        dto.setProductId(review.getProduct().getId());
+        dto.setProductName(review.getProduct().getName());
+        dto.setOrderId(review.getOrder() != null ? review.getOrder().getId() : null);
+        dto.setRating(review.getRating());
+        dto.setComment(review.getComment());
+        dto.setCreatedAt(review.getCreatedAt());
+        dto.setUpdatedAt(review.getUpdatedAt());
+        dto.setVerifiedPurchase(review.getVerifiedPurchase());
+        dto.setHelpfulVotes(review.getHelpfulVotes());
+        dto.setTotalVotes(review.getTotalVotes());
+        dto.setHelpfulPercentage(review.getHelpfulPercentage());
+        dto.setRatingStars(review.getRatingStars());
+        dto.setCanEdit(review.canEditReview());
+
+        return dto;
     }
 }

@@ -1,8 +1,8 @@
 package com.ecommerce.ecommerce.service;
-import com.ecommerce.entity.Category;
-import com.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.repository.CategoryRepository;
-import com.ecommerce.repository.ProductRepository;
+import com.ecommerce.ecommerce.entity.Category;
+import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
+import com.ecommerce.ecommerce.repository.CategoryRepository;
+import com.ecommerce.ecommerce.repository.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;

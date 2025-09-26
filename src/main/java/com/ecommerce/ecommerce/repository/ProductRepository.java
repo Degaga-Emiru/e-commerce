@@ -1,6 +1,6 @@
 package com.ecommerce.ecommerce.repository;
-import com.ecommerce.entity.Product;
-import com.ecommerce.entity.ProductStatus;
+import com.ecommerce.ecommerce.entity.Product;
+import com.ecommerce.ecommerce.entity.ProductStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

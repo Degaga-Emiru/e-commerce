@@ -1,5 +1,5 @@
 package com.ecommerce.ecommerce.repository;
-import com.ecommerce.entity.Review;
+import com.ecommerce.ecommerce.entity.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

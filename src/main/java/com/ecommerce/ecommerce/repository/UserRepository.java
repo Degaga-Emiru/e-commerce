@@ -1,7 +1,7 @@
 package com.ecommerce.ecommerce.repository;
 
-import com.ecommerce.entity.User;
-import com.ecommerce.entity.UserRole;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.entity.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,4 +25,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = :role")
     Long countByRole(@Param("role") UserRole role);
+    @Query("SELECT u FROM User u " +
+            "WHERE LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "   OR LOWER(u.firstName) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "   OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<User> searchUsers(@Param("query") String query);
+
 }

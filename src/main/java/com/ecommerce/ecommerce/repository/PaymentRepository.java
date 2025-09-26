@@ -1,6 +1,6 @@
 package com.ecommerce.ecommerce.repository;
-import com.ecommerce.entity.Payment;
-import com.ecommerce.entity.PaymentStatus;
+import com.ecommerce.ecommerce.entity.Payment;
+import com.ecommerce.ecommerce.entity.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

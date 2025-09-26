@@ -1,13 +1,14 @@
 package com.ecommerce.ecommerce.repository;
 
-import com.ecommerce.entity.Order;
-import com.ecommerce.entity.OrderStatus;
-import com.ecommerce.entity.User;
+import com.ecommerce.ecommerce.entity.Order;
+import com.ecommerce.ecommerce.entity.OrderStatus;
+import com.ecommerce.ecommerce.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

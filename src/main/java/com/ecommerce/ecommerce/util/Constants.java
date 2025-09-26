@@ -1,5 +1,7 @@
 package com.ecommerce.ecommerce.util;
 
+import java.math.BigDecimal;
+
 public class Constants {
     public static final int OTP_LENGTH = 6;
     public static final int OTP_EXPIRATION_MINUTES = 15;
