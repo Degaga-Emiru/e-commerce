@@ -6,6 +6,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.ecommerce.ecommerce.dto.ApiResponse;
+import com.ecommerce.ecommerce.dto.OrderDto;
+import com.ecommerce.ecommerce.dto.ShippingAddressDto;
+import com.ecommerce.ecommerce.entity.OrderItem;
+import com.ecommerce.ecommerce.entity.Product;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -24,18 +28,25 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> orderRequest) {
+    public ResponseEntity<?> createOrder(@RequestBody OrderDto orderDto) {
         try {
-            // Extract order data from request
-            Long userId = Long.valueOf(orderRequest.get("userId").toString());
-            String couponCode = (String) orderRequest.get("couponCode");
+            Long userId = orderDto.getUserId();
+            List<OrderItem> orderItems = orderDto.getOrderItems().stream()
+                    .map(itemDto -> {
+                        OrderItem item = new OrderItem();
+                        item.setProduct(new Product(itemDto.getProductId()));
+                        item.setQuantity(itemDto.getQuantity());
+                        return item;
+                    }).toList();
+            ShippingAddressDto shippingAddressDto = orderDto.getShippingAddress();
+            String couponCode = orderDto.getCouponCode();
 
-            // This would require proper DTO mapping
-            // For now, return sample response
+            Order newOrder = orderService.createOrder(userId, orderItems, shippingAddressDto, couponCode);
+
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Order created successfully");
-            response.put("orderNumber", "ORD" + System.currentTimeMillis());
+            response.put("orderNumber", newOrder.getOrderNumber());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

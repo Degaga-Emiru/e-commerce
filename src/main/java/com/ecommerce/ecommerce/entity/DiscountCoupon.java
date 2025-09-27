@@ -107,10 +107,14 @@ public class DiscountCoupon {
 
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
-
+    public boolean isActive() {
+        return Boolean.TRUE.equals(active);
+    }
     public Boolean getForNewUsers() { return forNewUsers; }
     public void setForNewUsers(Boolean forNewUsers) { this.forNewUsers = forNewUsers; }
-
+    public boolean isForNewUsers() {
+        return Boolean.TRUE.equals(forNewUsers);
+    }
     public Boolean getCombinable() { return combinable; }
     public void setCombinable(Boolean combinable) { this.combinable = combinable; }
 
@@ -119,4 +123,6 @@ public class DiscountCoupon {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+
 }

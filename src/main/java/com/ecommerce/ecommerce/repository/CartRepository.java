@@ -1,5 +1,4 @@
 package com.ecommerce.ecommerce.repository;
-
 import com.ecommerce.ecommerce.entity.Cart;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

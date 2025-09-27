@@ -155,7 +155,7 @@ public class DiscountService {
 
     private boolean isNewUser(User user) {
         Long deliveredOrderCount = orderRepository.countByUserIdAndStatus(user.getId(),
-                com.ecommerce.entity.OrderStatus.DELIVERED);
+                com.ecommerce.ecommerce.entity.OrderStatus.DELIVERED);
         return deliveredOrderCount == 0;
     }
 

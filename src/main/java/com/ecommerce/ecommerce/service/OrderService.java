@@ -6,6 +6,7 @@ import com.ecommerce.ecommerce.repository.OrderItemRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
 import com.ecommerce.ecommerce.repository.ProductRepository;
 import com.ecommerce.ecommerce.repository.DiscountCouponRepository;
+import com.ecommerce.ecommerce.dto.ShippingAddressDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +37,8 @@ public class OrderService {
         this.emailService = emailService;
     }
 
-    public Order createOrder(Long userId, List<OrderItem> orderItems, ShippingAddress shippingAddress, String couponCode) {
+    public Order createOrder(Long userId, List<OrderItem> orderItems, ShippingAddressDto shippingAddressDto, String couponCode)
+    {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -44,7 +46,15 @@ public class OrderService {
         order.setUser(user);
         order.setOrderNumber(generateOrderNumber());
         order.setStatus(OrderStatus.PENDING);
+        Address shippingAddress = new Address(
+                shippingAddressDto.getStreet(),
+                shippingAddressDto.getCity(),
+                shippingAddressDto.getState(),
+                shippingAddressDto.getZipCode(),
+                shippingAddressDto.getCountry()
+        );
         order.setShippingAddress(shippingAddress);
+        order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
         order.setOrderDate(LocalDateTime.now());
 
         // Calculate totals
@@ -96,8 +106,14 @@ public class OrderService {
         }
 
         // Send order confirmation email
-        emailService.sendOrderConfirmation(user.getEmail(), savedOrder.getOrderNumber(),
-                finalAmount.doubleValue(), user.getFirstName());
+        // ✅ CORRECT:
+        emailService.sendOrderConfirmation(
+                user.getEmail(),           // to (email address)
+                user.getFirstName(),       // userName
+                savedOrder.getOrderNumber(), // orderNumber
+                finalAmount.doubleValue(), // totalAmount
+                null                       // trackingNumber (can be null)
+        );
 
         return savedOrder;
     }

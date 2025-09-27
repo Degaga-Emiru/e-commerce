@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.entity;
+
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,7 +40,10 @@ public class Order {
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @Embedded
-    private ShippingAddress shippingAddress;
+    private Address shippingAddress;
+
+    @Column(name = "shipping_phone_number")
+    private String shippingPhoneNumber;
 
     @Column(name = "payment_method")
     private String paymentMethod;
@@ -75,10 +79,11 @@ public class Order {
     // Constructors, Getters, Setters
     public Order() {}
 
-    public Order(User user, List<OrderItem> orderItems, ShippingAddress shippingAddress) {
+    public Order(User user, List<OrderItem> orderItems, Address shippingAddress, String shippingPhoneNumber) {
         this.user = user;
         this.orderItems = orderItems;
         this.shippingAddress = shippingAddress;
+        this.shippingPhoneNumber = shippingPhoneNumber;
     }
 
     // Getters and Setters
@@ -109,8 +114,11 @@ public class Order {
     public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) { this.orderItems = orderItems; }
 
-    public ShippingAddress getShippingAddress() { return shippingAddress; }
-    public void setShippingAddress(ShippingAddress shippingAddress) { this.shippingAddress = shippingAddress; }
+    public Address getShippingAddress() { return shippingAddress; }
+    public void setShippingAddress(Address shippingAddress) { this.shippingAddress = shippingAddress; }
+
+    public String getShippingPhoneNumber() { return shippingPhoneNumber; }
+    public void setShippingPhoneNumber(String shippingPhoneNumber) { this.shippingPhoneNumber = shippingPhoneNumber; }
 
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }

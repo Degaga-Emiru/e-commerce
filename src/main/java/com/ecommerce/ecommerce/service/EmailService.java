@@ -33,6 +33,11 @@ public class EmailService {
         String htmlContent = createOrderConfirmationEmail(userName, orderNumber, totalAmount, trackingNumber);
         sendHtmlMessage(to, subject, htmlContent);
     }
+    // Add an overloaded method without tracking number
+    public void sendOrderConfirmation(String to, String userName, String orderNumber,
+                                      Double totalAmount) {
+        sendOrderConfirmation(to, userName, orderNumber, totalAmount, null);
+    }
 
     public void sendPasswordResetEmail(String to, String userName, String resetToken) {
         String subject = "Password Reset Request";
