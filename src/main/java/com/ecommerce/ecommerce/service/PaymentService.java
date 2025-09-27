@@ -166,4 +166,14 @@ public class PaymentService {
     private String generateTransactionId() {
         return "TXN" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
+    public BigDecimal getTotalRevenue(LocalDateTime startDate, LocalDateTime endDate) {
+        // Sum up all completed payments within the given date range
+        return paymentRepository.findAll().stream()
+                .filter(payment -> payment.getStatus() == PaymentStatus.COMPLETED)
+                .filter(payment -> !payment.getPaymentDate().isBefore(startDate) &&
+                        !payment.getPaymentDate().isAfter(endDate))
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
 }
