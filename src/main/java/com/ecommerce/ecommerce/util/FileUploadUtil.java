@@ -1,6 +1,5 @@
 package com.ecommerce.ecommerce.util;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.util.Arrays;
 import java.util.List;
 
