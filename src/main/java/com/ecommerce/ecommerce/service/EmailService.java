@@ -98,39 +98,42 @@ public class EmailService {
     // HTML Email Content Generators
     private String createOtpVerificationEmail(String otpCode, String userName) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
-                    .content { padding: 20px; background: #f9f9f9; }
-                    .otp-code { font-size: 32px; font-weight: bold; text-align: center; color: #4CAF50; margin: 20px 0; padding: 15px; background: white; border: 2px dashed #4CAF50; }
-                    .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>Verify Your Email Address</h2>
-                    </div>
-                    <div class="content">
-                        <p>Hello <strong>%s</strong>,</p>
-                        <p>Thank you for registering with our e-commerce platform. Please use the following OTP code to verify your email address:</p>
-                        <div class="otp-code">%s</div>
-                        <p>This OTP code will expire in 15 minutes.</p>
-                        <p>If you didn't create an account with us, please ignore this email.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2024 E-Commerce Platform. All rights reserved.</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
+                .content { padding: 20px; background: #f9f9f9; text-align: center; }
+                .otp-code { font-size: 42px; font-weight: bold; color: #4CAF50; margin: 20px 0; padding: 20px; background: white; border: 2px dashed #4CAF50; display: inline-block; }
+                .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>Verify Your Email Address</h2>
                 </div>
-            </body>
-            </html>
-            """.formatted(userName, otpCode);
+                <div class="content">
+                    <p><strong>Hello %s</strong></p>
+                    <p>Use this OTP code to verify your email:</p>
+                    <div class="otp-code">%s</div>
+                    
+                    <p>Thank you for registering with our e-commerce platform. Please use the above OTP code to verify your email address.</p>
+                    <p>This OTP code will expire in 15 minutes.</p>
+                    <p>If you didn't create an account with us, please ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2024 E-Commerce Platform. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(userName, otpCode);
     }
+
 
     private String createWelcomeEmail(String userName) {
         return """
