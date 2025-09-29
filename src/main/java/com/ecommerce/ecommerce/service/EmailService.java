@@ -66,15 +66,23 @@ public class EmailService {
 
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true = HTML content
+            helper.setText(htmlContent, true);
 
             mailSender.send(message);
+            System.out.println("✅ Email sent successfully to: " + to);
         } catch (MessagingException e) {
+            System.err.println("❌ Failed to send HTML email to: " + to);
+            System.err.println("Error: " + e.getMessage());
+            // Don't throw exception - allow registration to continue
             // Fallback to simple text email
-            sendSimpleEmail(to, subject, extractTextFromHtml(htmlContent));
+            try {
+                sendSimpleEmail(to, subject, extractTextFromHtml(htmlContent));
+            } catch (Exception ex) {
+                System.err.println("❌ Fallback email also failed: " + ex.getMessage());
+                // Still don't throw - registration should succeed even if email fails
+            }
         }
     }
-
     public void sendSimpleEmail(String to, String subject, String text) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();

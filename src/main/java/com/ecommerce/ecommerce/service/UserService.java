@@ -31,28 +31,55 @@ public class UserService {
     }
 
     public User registerUser(RegisterRequest registerRequest) {
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new RuntimeException("Email already exists");
+        System.out.println("=== USER SERVICE REGISTRATION START ===");
+        System.out.println("Email: " + registerRequest.getEmail());
+
+        try {
+            if (userRepository.existsByEmail(registerRequest.getEmail())) {
+                System.out.println("❌ Email already exists");
+                throw new RuntimeException("Email already exists");
+            }
+            System.out.println("✅ Email is available");
+
+            User user = new User();
+            user.setEmail(registerRequest.getEmail());
+            user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+            System.out.println("✅ Password encoded successfully");
+
+            user.setFirstName(registerRequest.getFirstName());
+            user.setLastName(registerRequest.getLastName());
+            user.setPhoneNumber(registerRequest.getPhoneNumber());
+            user.setRole(UserRole.CUSTOMER);
+            user.setEnabled(false);
+
+            String otpCode = generateOtpCode();
+            user.setVerificationCode(otpCode);
+            user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(otpExpirationMinutes));
+
+            System.out.println("✅ Saving user to database...");
+            User savedUser = userRepository.save(user);
+            System.out.println("✅ User saved with ID: " + savedUser.getId());
+
+            System.out.println("✅ Attempting to send OTP email...");
+            try {
+                // ✅ FIXED: Correct parameter order
+                emailService.sendOtpVerificationEmail(
+                        savedUser.getEmail(),
+                        savedUser.getFirstName(),
+                        otpCode
+                );
+                System.out.println("✅ Email sent successfully");
+            } catch (Exception emailException) {
+                System.err.println("⚠️ Email sending failed, but registration continues: " + emailException.getMessage());
+                // Don't throw - registration should succeed even if email fails
+            }
+
+            return savedUser;
+        } catch (Exception e) {
+            System.out.println("❌ Registration failed: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Registration failed: " + e.getMessage());
         }
-
-        User user = new User();
-        user.setEmail(registerRequest.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-        user.setFirstName(registerRequest.getFirstName());
-        user.setLastName(registerRequest.getLastName());
-        user.setPhoneNumber(registerRequest.getPhoneNumber());
-        user.setRole(UserRole.CUSTOMER);
-        user.setEnabled(false);
-
-        String otpCode = generateOtpCode();
-        user.setVerificationCode(otpCode);
-        user.setVerificationCodeExpiry(LocalDateTime.now().plusMinutes(otpExpirationMinutes));
-
-        User savedUser = userRepository.save(user);
-
-        emailService.sendOtpVerificationEmail(savedUser.getEmail(), otpCode, savedUser.getFirstName());
-
-        return savedUser;
     }
 
     public User verifyOtp(String email, String otpCode) {
@@ -166,7 +193,6 @@ public class UserService {
         return userRepository.searchUsers(query);
     }
 
-    // new class
     public String initiatePasswordReset(String email) {
         User user = getUserByEmail(email);
 
@@ -181,8 +207,8 @@ public class UserService {
 
         userRepository.save(user);
 
-        // Send OTP email
-        emailService.sendPasswordResetEmail(user.getEmail(), otpCode, user.getFirstName());
+        // ✅ FIXED: Correct parameter order - (to, userName, resetToken)
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), otpCode);
 
         return otpCode;
     }
