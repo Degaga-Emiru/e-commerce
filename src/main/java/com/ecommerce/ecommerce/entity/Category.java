@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.entity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,11 +22,11 @@ public class Category {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    //@JsonIgnore
     private List<Product> products = new ArrayList<>();
 
     @PrePersist

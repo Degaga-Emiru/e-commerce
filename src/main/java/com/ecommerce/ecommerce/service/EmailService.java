@@ -96,7 +96,7 @@ public class EmailService {
     }
 
     // HTML Email Content Generators
-    private String createOtpVerificationEmail(String otpCode, String userName) {
+    private String createOtpVerificationEmail( String userName, String otpCode ) {
         return """
         <!DOCTYPE html>
         <html>
