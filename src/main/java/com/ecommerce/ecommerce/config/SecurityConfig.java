@@ -48,8 +48,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/products/**").permitAll()
-                        .requestMatchers("/categories/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()  // ✅ Added /** pattern
+                        .requestMatchers("/api/categories/**").permitAll() // ✅ Added /** pattern
                         .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")

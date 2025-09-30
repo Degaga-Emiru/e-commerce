@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.security;
+
 import com.ecommerce.ecommerce.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
-    // Define endpoints that should skip JWT authentication
+    // ✅ UPDATED: Better public endpoint patterns
     private final List<String> PUBLIC_ENDPOINTS = Arrays.asList(
             "/api/auth/register",
             "/api/auth/login",
@@ -30,9 +32,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/reset-password",
             "/api/auth/check-verification",
             "/api/auth/verify-reset-otp",
-            "/api/products/",
-            "/api/categories/",
             "/api/public/"
+    );
+
+    // ✅ ADDED: Public path prefixes for broader matching
+    private final List<String> PUBLIC_PATH_PREFIXES = Arrays.asList(
+            "/api/products",
+            "/api/categories",
+            "/products",
+            "/categories",
+            "/public"
     );
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
@@ -45,9 +54,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+        String method = request.getMethod();
 
-        // Skip JWT processing for public endpoints
-        if (isPublicEndpoint(requestURI)) {
+        // ✅ IMPROVED: Skip JWT processing for public endpoints
+        if (isPublicEndpoint(requestURI, method)) {
             filterChain.doFilter(request, response);
             return; // Critical: exit the filter for public routes
         }
@@ -75,10 +85,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // Helper method
-    private boolean isPublicEndpoint(String requestURI) {
-        return PUBLIC_ENDPOINTS.stream().anyMatch(requestURI::startsWith);
+    // ✅ IMPROVED: Better logic for checking public endpoints
+    private boolean isPublicEndpoint(String requestURI, String method) {
+        // Allow all GET requests to products and categories (read-only access)
+        if (("GET".equalsIgnoreCase(method) &&
+                (requestURI.startsWith("/api/products") ||
+                        requestURI.startsWith("/api/categories") ||
+                        requestURI.startsWith("/products/") ||
+                        requestURI.startsWith("/categories/")))) {
+            return true;
+        }
+
+        // Check exact matches for auth endpoints
+        if (PUBLIC_ENDPOINTS.stream().anyMatch(requestURI::startsWith)) {
+            return true;
+        }
+
+        // Check path prefixes for broader matching
+        return PUBLIC_PATH_PREFIXES.stream().anyMatch(requestURI::startsWith);
     }
-
-
 }
