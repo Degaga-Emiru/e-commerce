@@ -1,52 +1,30 @@
+// ProductMapper.java
 package com.ecommerce.ecommerce.mapper;
+
 import com.ecommerce.ecommerce.dto.ProductDto;
 import com.ecommerce.ecommerce.entity.Product;
-import org.springframework.stereotype.Component;
-
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Component
-public class ProductMapper {
+@Mapper(componentModel = "spring") // This tells MapStruct to generate a Spring bean
+public interface ProductMapper {
 
-    public ProductDto toDto(Product product) {
-        if (product == null) {
-            return null;
-        }
+    @Mapping(target = "categoryId", source = "category.id")
+    @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "sellerId", source = "seller.id")
+    @Mapping(target = "sellerName", expression = "java(product.getSeller().getFirstName() + \" \" + product.getSeller().getLastName())")
+    @Mapping(target = "status", source = "status")
+    ProductDto toDto(Product product);
 
-        ProductDto dto = new ProductDto();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setDescription(product.getDescription());
-        dto.setPrice(product.getPrice());
-        dto.setStockQuantity(product.getStockQuantity());
-        dto.setImageUrl(product.getImageUrl());
-        dto.setStatus(product.getStatus() != null ? product.getStatus().name() : null);
-        dto.setCreatedAt(product.getCreatedAt());
-        dto.setUpdatedAt(product.getUpdatedAt());
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "seller", ignore = true)
+    @Mapping(target = "reviews", ignore = true)
+    @Mapping(target = "orderItems", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    Product toEntity(ProductDto productDto);
 
-        // Set category info without circular reference
-        if (product.getCategory() != null) {
-            dto.setCategoryId(product.getCategory().getId());
-            dto.setCategoryName(product.getCategory().getName());
-        }
-
-        // Set seller info
-        if (product.getSeller() != null) {
-            dto.setSellerId(product.getSeller().getId());
-            dto.setSellerName(product.getSeller().getFirstName() + " " + product.getSeller().getLastName());
-        }
-
-        // You can add rating logic here when you implement reviews
-        dto.setAverageRating(0.0); // Default for now
-        dto.setReviewCount(0);     // Default for now
-
-        return dto;
-    }
-
-    public List<ProductDto> toDtoList(List<Product> products) {
-        return products.stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-    }
+    List<ProductDto> toDtoList(List<Product> products);
 }

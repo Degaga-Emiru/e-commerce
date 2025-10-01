@@ -1,5 +1,4 @@
 package com.ecommerce.ecommerce.security;
-
 import com.ecommerce.ecommerce.service.CustomUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -7,10 +6,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -22,7 +22,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
 
-    // ✅ UPDATED: Better public endpoint patterns
     private final List<String> PUBLIC_ENDPOINTS = Arrays.asList(
             "/api/auth/register",
             "/api/auth/login",
@@ -33,15 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/check-verification",
             "/api/auth/verify-reset-otp",
             "/api/public/"
-    );
-
-    // ✅ ADDED: Public path prefixes for broader matching
-    private final List<String> PUBLIC_PATH_PREFIXES = Arrays.asList(
-            "/api/products",
-            "/api/categories",
-            "/products",
-            "/categories",
-            "/public"
     );
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
@@ -56,10 +46,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         String method = request.getMethod();
 
-        // ✅ IMPROVED: Skip JWT processing for public endpoints
+        // Skip JWT check for public endpoints
         if (isPublicEndpoint(requestURI, method)) {
             filterChain.doFilter(request, response);
-            return; // Critical: exit the filter for public routes
+            return;
         }
 
         final String authorizationHeader = request.getHeader("Authorization");
@@ -68,16 +58,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+            try {
+                username = jwtUtil.extractUsername(jwt); // from "sub" claim
+            } catch (Exception e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Invalid JWT token");
+                return;
+            }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(jwt, userDetails)) {
+                List<String> roles = jwtUtil.extractRoles(jwt);
+                var authorities = roles.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
+
                 UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
@@ -85,23 +87,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // ✅ IMPROVED: Better logic for checking public endpoints
     private boolean isPublicEndpoint(String requestURI, String method) {
-        // Allow all GET requests to products and categories (read-only access)
-        if (("GET".equalsIgnoreCase(method) &&
+        if ("GET".equalsIgnoreCase(method) &&
                 (requestURI.startsWith("/api/products") ||
-                        requestURI.startsWith("/api/categories") ||
-                        requestURI.startsWith("/products/") ||
-                        requestURI.startsWith("/categories/")))) {
+                        requestURI.startsWith("/api/categories"))) {
             return true;
         }
 
-        // Check exact matches for auth endpoints
-        if (PUBLIC_ENDPOINTS.stream().anyMatch(requestURI::startsWith)) {
-            return true;
-        }
-
-        // Check path prefixes for broader matching
-        return PUBLIC_PATH_PREFIXES.stream().anyMatch(requestURI::startsWith);
+        return PUBLIC_ENDPOINTS.stream().anyMatch(requestURI::startsWith);
     }
 }
