@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,8 @@ public class OrderService {
         order.setShippingAddress(shippingAddress);
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
         order.setOrderDate(LocalDateTime.now());
+        order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
+
 
         // Calculate totals
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -142,14 +145,29 @@ public class OrderService {
 
         if (newStatus == OrderStatus.SHIPPED) {
             order.setShippedDate(LocalDateTime.now());
+            // send shipped email
+            emailService.sendShippingUpdate(
+                    order.getUser().getEmail(),              // to
+                    order.getUser().getFirstName(),          // userName
+                    order.getOrderNumber(),                  // orderNumber
+                    order.getStatus().name(),                // status
+                    "https://tracking.example.com/" + order.getId(),  // tracking link
+                    "3-5 business days"            // estimated delivery date (String or LocalDate.toString())
+            );
         } else if (newStatus == OrderStatus.DELIVERED) {
             order.setDeliveredDate(LocalDateTime.now());
-            // Release escrow payment if applicable
             releaseEscrowPayment(orderId);
+            // notify admin
+            emailService.sendAdminNotification(
+                    "admin@store.com",
+                    "Order Delivered",
+                    "Order " + order.getOrderNumber() + " has been delivered successfully."
+            );
         }
 
         return orderRepository.save(order);
     }
+
 
     public Order cancelOrder(Long orderId) {
         Order order = getOrderById(orderId);

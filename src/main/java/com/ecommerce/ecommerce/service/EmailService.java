@@ -279,43 +279,72 @@ public class EmailService {
             """.formatted(userName, resetToken);
     }
 
-    private String createShippingUpdateEmail(String userName, String orderNumber, String status, String trackingNumber, String estimatedDelivery) {
+    private String createShippingUpdateEmail(String userName,
+                                             String orderNumber,
+                                             String status,
+                                             String trackingNumber,
+                                             String estimatedDelivery) {
         return """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>
-                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                    .header { background: #ff9800; color: white; padding: 20px; text-align: center; }
-                    .content { padding: 20px; background: #f9f9f9; }
-                    .shipping-info { background: #fff3cd; padding: 15px; border-radius: 5px; margin: 15px 0; }
-                    .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h2>Shipping Update 📦</h2>
-                    </div>
-                    <div class="content">
-                        <p>Hello <strong>%s</strong>,</p>
-                        <p>Your order <strong>#%s</strong> has been updated:</p>
-                        <div class="shipping-info">
-                            <p><strong>Status:</strong> %s</p>
-                            <p><strong>Tracking Number:</strong> %s</p>
-                            <p><strong>Estimated Delivery:</strong> %s</p>
-                        </div>
-                        <p>You can track your package using the tracking number above.</p>
-                    </div>
-                    <div class="footer">
-                        <p>&copy; 2024 E-Commerce Platform. All rights reserved.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """.formatted(userName, orderNumber, status, trackingNumber, estimatedDelivery);
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                padding: 20px;
+              }
+              .container {
+                background-color: #ffffff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                max-width: 600px;
+                margin: auto;
+              }
+              h2 {
+                color: #ff6600;
+              }
+              .details {
+                margin: 20px 0;
+                padding: 15px;
+                background: #fafafa;
+                border-left: 4px solid #ff6600;
+              }
+              .btn {
+                display: inline-block;
+                padding: 12px 20px;
+                margin-top: 20px;
+                background-color: #ff6600;
+                color: #ffffff;
+                text-decoration: none;
+                border-radius: 5px;
+              }
+              .footer {
+                margin-top: 30px;
+                font-size: 12px;
+                color: #777;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h2>Shipping Update for Your Order</h2>
+              <p>Hi <b>%s</b>,</p>
+              <p>We wanted to let you know that your order <b>#%s</b> has an update:</p>
+              <div class="details">
+                <p><b>Status:</b> %s</p>
+                <p><b>Tracking Number:</b> %s</p>
+                <p><b>Estimated Delivery:</b> %s</p>
+              </div>
+              <p>You can track your shipment using the button below:</p>
+              <a class="btn" href="https://www.fedex.com/fedextrack/?trknbr=%s" target="_blank">
+                Track Your Order
+              </a>
+              <p class="footer">Thank you for shopping with us!<br>The E-Commerce Team</p>
+            </div>
+          </body>
+        </html>
+        """.formatted(userName, orderNumber, status, trackingNumber, estimatedDelivery, trackingNumber);
     }
 
     private String createPromotionalEmail(String userName, String promotionTitle, String promotionDescription, String couponCode) {
@@ -409,26 +438,37 @@ public class EmailService {
     public void sendOrderShippedEmail(String to, String userName, String orderNumber, String trackingUrl) {
         String subject = "Your Order Has Shipped! - #" + orderNumber;
         String htmlContent = """
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;}</style></head>
-            <body>
-                <div style="max-width:600px;margin:0 auto;padding:20px;">
-                    <div style="background:#17a2b8;color:white;padding:20px;text-align:center;">
-                        <h2>🚚 Your Order is on the Way!</h2>
-                    </div>
-                    <div style="padding:20px;background:#f9f9f9;">
-                        <p>Hello <strong>%s</strong>,</p>
-                        <p>Great news! Your order <strong>#%s</strong> has been shipped.</p>
-                        <div style="background:#d1ecf1;padding:15px;margin:15px 0;">
-                            <p><strong>Track your package:</strong> <a href="%s">Click here to track</a></p>
-                        </div>
-                        <p>Expected delivery: 3-5 business days</p>
-                    </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .header { background:#17a2b8; color:white; padding:20px; text-align:center; }
+                .content { background:#f9f9f9; padding:20px; }
+                .tracking { background:#d1ecf1; padding:15px; margin:15px 0; text-align:center; }
+                a { color:#0c5460; font-weight:bold; }
+            </style>
+        </head>
+        <body>
+            <div style="max-width:600px;margin:0 auto;">
+                <div class="header">
+                    <h2>🚚 Your Order is on the Way!</h2>
                 </div>
-            </body>
-            </html>
-            """.formatted(userName, orderNumber, trackingUrl);
+                <div class="content">
+                    <p>Hello <strong>%s</strong>,</p>
+                    <p>Great news! Your order <strong>#%s</strong> has been shipped.</p>
+                    <div class="tracking">
+                        <p><strong>Track your package:</strong></p>
+                        <p><a href="%s">Click here to track your shipment</a></p>
+                    </div>
+                    <p>Expected delivery: 3–5 business days.</p>
+                    <p>Thank you for shopping with us!</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(userName, orderNumber, trackingUrl);
 
         sendHtmlMessage(to, subject, htmlContent);
     }
