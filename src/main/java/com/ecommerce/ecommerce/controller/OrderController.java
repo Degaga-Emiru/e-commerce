@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.controller;
+import com.ecommerce.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.ecommerce.entity.Order;
 import com.ecommerce.ecommerce.entity.OrderStatus;
 import com.ecommerce.ecommerce.service.OrderService;
@@ -28,31 +29,33 @@ public class OrderController {
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> createOrder(@RequestBody OrderDto orderDto) {
-        try {
-            Long userId = orderDto.getUserId();
-            List<OrderItem> orderItems = orderDto.getOrderItems().stream()
-                    .map(itemDto -> {
-                        OrderItem item = new OrderItem();
-                        item.setProduct(new Product(itemDto.getProductId()));
-                        item.setQuantity(itemDto.getQuantity());
-                        return item;
-                    }).toList();
-            ShippingAddressDto shippingAddressDto = orderDto.getShippingAddress();
-            String couponCode = orderDto.getCouponCode();
-
-            Order newOrder = orderService.createOrder(userId, orderItems, shippingAddressDto, couponCode);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Order created successfully");
-            response.put("orderNumber", newOrder.getOrderNumber());
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+    public ResponseEntity<?> createOrder(@RequestBody CreateOrderRequest request) {
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "Order must contain at least one item"));
         }
+
+        // Convert DTO to Entity
+        List<OrderItem> orderItems = request.getItems().stream()
+                .map(itemDto -> {
+                    OrderItem item = new OrderItem();
+                    Product product = new Product();
+                    product.setId(itemDto.getProductId());
+                    item.setProduct(product);
+                    item.setQuantity(itemDto.getQuantity());
+                    return item;
+                }).toList();
+
+        Order order = orderService.createOrder(
+                request.getUserId(),
+                orderItems,
+                request.getShippingAddress(),
+                request.getCouponCode()
+        );
+
+        return ResponseEntity.ok(new ApiResponse(true, "Order created successfully", order));
     }
+
 
     @GetMapping
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN') or hasRole('SELLER')")

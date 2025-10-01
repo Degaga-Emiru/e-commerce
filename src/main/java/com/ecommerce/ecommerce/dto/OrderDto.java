@@ -1,6 +1,7 @@
 package com.ecommerce.ecommerce.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDto {
@@ -13,7 +14,7 @@ public class OrderDto {
     private BigDecimal discountAmount;
     private BigDecimal shippingAmount;
     private BigDecimal finalAmount;
-    private List<OrderItemDto> orderItems;
+    private List<OrderItemDto> orderItems = new ArrayList<>();
     private ShippingAddressDto shippingAddress;
     private String paymentMethod;
     private String paymentStatus;
@@ -79,4 +80,5 @@ public class OrderDto {
 
     public String getCouponCode() { return couponCode; }
     public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
+
 }
