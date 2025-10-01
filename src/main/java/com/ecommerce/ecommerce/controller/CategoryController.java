@@ -1,6 +1,8 @@
 package com.ecommerce.ecommerce.controller;
 import com.ecommerce.ecommerce.dto.ApiResponse;
+import com.ecommerce.ecommerce.dto.CategoryDto;
 import com.ecommerce.ecommerce.entity.Category;
+import com.ecommerce.ecommerce.mapper.CategoryMapper;
 import com.ecommerce.ecommerce.service.CategoryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,11 +27,14 @@ public class CategoryController {
     public ResponseEntity<?> getAllCategories() {
         try {
             List<Category> categories = categoryService.getAllCategories();
+            List<CategoryDto> categoryDtos = categories.stream()
+                    .map(CategoryMapper::toDto)
+                    .toList();
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("categories", categories);
-            response.put("count", categories.size());
+            response.put("categories", categoryDtos);
+            response.put("count", categoryDtos.size());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -41,19 +46,17 @@ public class CategoryController {
     public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
         try {
             Category category = categoryService.getCategoryById(id);
-            Long productCount = categoryService.getProductCountByCategory(id);
+            CategoryDto categoryDto = CategoryMapper.toDto(category);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("category", category);
-            response.put("productCount", productCount);
+            response.put("category", categoryDto);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         }
     }
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createCategory(

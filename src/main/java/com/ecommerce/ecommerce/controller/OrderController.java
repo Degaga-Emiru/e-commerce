@@ -2,6 +2,7 @@ package com.ecommerce.ecommerce.controller;
 import com.ecommerce.ecommerce.dto.CreateOrderRequest;
 import com.ecommerce.ecommerce.entity.Order;
 import com.ecommerce.ecommerce.entity.OrderStatus;
+import com.ecommerce.ecommerce.mapper.OrderMapper;
 import com.ecommerce.ecommerce.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -35,13 +36,10 @@ public class OrderController {
                     .body(new ApiResponse(false, "Order must contain at least one item"));
         }
 
-        // Convert DTO to Entity
         List<OrderItem> orderItems = request.getItems().stream()
                 .map(itemDto -> {
                     OrderItem item = new OrderItem();
-                    Product product = new Product();
-                    product.setId(itemDto.getProductId());
-                    item.setProduct(product);
+                    item.setProduct(new com.ecommerce.ecommerce.entity.Product(itemDto.getProductId()));
                     item.setQuantity(itemDto.getQuantity());
                     return item;
                 }).toList();
@@ -53,25 +51,9 @@ public class OrderController {
                 request.getCouponCode()
         );
 
-        return ResponseEntity.ok(new ApiResponse(true, "Order created successfully", order));
-    }
+        OrderDto orderDto = OrderMapper.toDto(order);
 
-
-    @GetMapping
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN') or hasRole('SELLER')")
-    public ResponseEntity<?> getUserOrders(@RequestParam Long userId) {
-        try {
-            List<Order> orders = orderService.getUserOrders(userId);
-
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("orders", orders);
-            response.put("count", orders.size());
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(new ApiResponse(true, "Order created successfully", orderDto));
     }
 
     @GetMapping("/{orderId}")
@@ -79,10 +61,25 @@ public class OrderController {
     public ResponseEntity<?> getOrderById(@PathVariable Long orderId) {
         try {
             Order order = orderService.getOrderById(orderId);
+            OrderDto orderDto = OrderMapper.toDto(order);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Order retrieved successfully", orderDto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN') or hasRole('SELLER')")
+    public ResponseEntity<?> getUserOrders(@RequestParam Long userId) {
+        try {
+            List<Order> orders = orderService.getUserOrders(userId);
+            List<OrderDto> dtos = orders.stream().map(OrderMapper::toDto).toList();
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("order", order);
+            response.put("orders", dtos);
+            response.put("count", dtos.size());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
