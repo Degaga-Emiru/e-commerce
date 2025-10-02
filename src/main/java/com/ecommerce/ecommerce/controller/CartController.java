@@ -13,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/api/cart")
 @CrossOrigin(origins = "*")
@@ -97,4 +99,20 @@ public class CartController {
         cartService.clearCart(userId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Cart cleared", null));
     }
+    @GetMapping("/total")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> getCartTotal(Authentication authentication) {
+        Long userId = getCurrentUserId(authentication);
+        BigDecimal total = cartService.getCartTotal(userId);
+        return ResponseEntity.ok(new ApiResponse(true, "Cart total retrieved", total));
+    }
+    @GetMapping("/count")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> getCartItemCount(Authentication authentication) {
+        Long userId = getCurrentUserId(authentication);
+        Integer count = cartService.getCartItemCount(userId);
+        return ResponseEntity.ok(new ApiResponse(true, "Cart item count retrieved", count));
+    }
+
+
 }
