@@ -2,11 +2,11 @@ package com.ecommerce.ecommerce.dto;
 
 import java.time.LocalDateTime;
 
-public class ApiResponse {
+public class ApiResponse<T> {
     private boolean success;
     private String message;
     private LocalDateTime timestamp;
-    private Object data;
+    private T data;
 
     public ApiResponse() {
         this.timestamp = LocalDateTime.now();
@@ -18,7 +18,7 @@ public class ApiResponse {
         this.message = message;
     }
 
-    public ApiResponse(boolean success, String message, Object data) {
+    public ApiResponse(boolean success, String message, T data) {
         this();
         this.success = success;
         this.message = message;
@@ -35,6 +35,6 @@ public class ApiResponse {
     public LocalDateTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 
-    public Object getData() { return data; }
-    public void setData(Object data) { this.data = data; }
+    public T getData() { return data; }
+    public void setData(T data) { this.data = data; }
 }
