@@ -1,20 +1,26 @@
 package com.ecommerce.ecommerce.service;
+import com.ecommerce.ecommerce.entity.Product;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.entity.UserRole;
+import com.ecommerce.ecommerce.repository.UserRepository;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import java.util.List;
 
 @Service
 public class EmailService {
     private final JavaMailSender mailSender;
+    private final UserRepository userRepository;
 
-    public EmailService(JavaMailSender mailSender) {
+
+    public EmailService(JavaMailSender mailSender, UserRepository userRepository) {
         this.mailSender = mailSender;
+        this.userRepository = userRepository;
     }
-
     public void sendOtpVerificationEmail(String to, String otpCode, String userName) {
         String subject = "Verify Your Email - OTP Code";
         String htmlContent = createOtpVerificationEmail(otpCode, userName);
@@ -57,6 +63,37 @@ public class EmailService {
         String subject = "Special Offer: " + promotionTitle;
         String htmlContent = createPromotionalEmail(userName, promotionTitle, promotionDescription, couponCode);
         sendHtmlMessage(to, subject, htmlContent);
+    }
+    /**
+     * Send a system-wide notification email to all registered users
+     * @param subject Email subject
+     * @param message Main message content
+     * @param color Background color (default orange if null)
+     */
+    public void sendSystemNotificationToAllUsers(String subject, String message, String color) {
+        if (color == null || color.isEmpty()) color = "#FFA500"; // Default orange
+
+        List<User> users = userRepository.findAll();
+        for (User user : users) {
+            sendSystemNotification(user.getEmail(), user.getFirstName(), subject, message, color);
+        }
+    }
+    public void sendNewProductNotification(Product product) {
+        // Get all customers
+        List<User> customers = userRepository.findByRole(UserRole.CUSTOMER);
+
+        for (User customer : customers) {
+            String subject = "New Product Alert: " + product.getName();
+            String body = String.format(
+                    "Hello %s,\n\nWe have a new product available!\n\nName: %s\nCategory: %s\nPrice: $%s\n\nCheck it out now!",
+                    customer.getFirstName(),
+                    product.getName(),
+                    product.getCategory().getName(),
+                    product.getPrice()
+            );
+
+            sendSimpleEmail(customer.getEmail(), subject, body);
+        }
     }
 
     private void sendHtmlMessage(String to, String subject, String htmlContent) {
@@ -495,4 +532,80 @@ public class EmailService {
 
         sendHtmlMessage(adminEmail, "Admin Alert: " + subject, htmlContent);
     }
+    private String createNewProductEmail(String userName, Product product) {
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+                .container { background-color: #fff; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; }
+                .header { background-color: #FFA500; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { padding: 20px; }
+                .product { margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+                .footer { margin-top: 20px; font-size: 12px; color: #777; text-align: center; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2>New Product Alert!</h2>
+                </div>
+                <div class="content">
+                    <p>Hi <strong>%s</strong>,</p>
+                    <p>We have just added a new product to our store:</p>
+                    <div class="product">
+                        <p><strong>Name:</strong> %s</p>
+                        <p><strong>Brand:</strong> %s</p>
+                        <p><strong>Categories:</strong> %s</p>
+                        <p><strong>Price:</strong> $%s</p>
+                    </div>
+                    <p>Hurry! Check it out before it runs out of stock.</p>
+                </div>
+                <div class="footer">
+                    &copy; 2025 E-Commerce Platform. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+        """.formatted(userName,
+                product.getName(),
+                //product.getBrand(),
+                String.join(", ", product.getCategory().getName()
+                ), // assuming categories is List<String>
+                product.getPrice());
+    }
+
+
+    public void sendSystemNotification(String to, String userName, String subject, String message, String color) {
+        String htmlContent = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: %s; padding: 20px; border-radius: 10px; color: white; }
+                    h2 { text-align: center; }
+                    p { font-size: 16px; line-height: 1.5; }
+                    .footer { text-align: center; font-size: 12px; margin-top: 20px; opacity: 0.8; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h2>%s</h2>
+                    <p>Hi <strong>%s</strong>,</p>
+                    <p>%s</p>
+                    <div class="footer">
+                        &copy; 2024 E-Commerce Platform. All rights reserved.
+                    </div>
+                </div>
+            </body>
+            </html>
+        """.formatted(color, subject, userName, message);
+
+        sendHtmlMessage(to, subject, htmlContent);
+    }
+
 }

@@ -28,8 +28,9 @@ public class ProductService {
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final ProductMapper productMapper;
+    private final EmailService emailService;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository,
+    public ProductService(ProductRepository productRepository,EmailService emailService, CategoryRepository categoryRepository,
                           UserRepository userRepository, FileStorageService fileStorageService,
                           ProductMapper productMapper) {
         this.productRepository = productRepository;
@@ -37,6 +38,8 @@ public class ProductService {
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.productMapper = productMapper;
+        this.emailService = emailService;
+
     }
 
     // ✅ GET METHODS - Return ProductDto
@@ -142,6 +145,8 @@ public class ProductService {
         }
 
         Product savedProduct = productRepository.save(product);
+        emailService.sendNewProductNotification(savedProduct);
+
         return productMapper.toDto(savedProduct);
     }
 

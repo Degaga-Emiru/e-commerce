@@ -3,10 +3,7 @@ package com.ecommerce.ecommerce.controller;
 import com.ecommerce.ecommerce.dto.ApiResponse;
 import com.ecommerce.ecommerce.entity.DiscountCoupon;
 import com.ecommerce.ecommerce.entity.DiscountType;
-import com.ecommerce.ecommerce.service.DiscountService;
-import com.ecommerce.ecommerce.service.OrderService;
-import com.ecommerce.ecommerce.service.PaymentService;
-import com.ecommerce.ecommerce.service.UserService;
+import com.ecommerce.ecommerce.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +23,19 @@ public class AdminController {
     private final OrderService orderService;
     private final PaymentService paymentService;
     private final DiscountService discountService;
+    private final EmailService emailService;
 
     public AdminController(UserService userService,
                            OrderService orderService,
                            PaymentService paymentService,
-                           DiscountService discountService) {
+                           DiscountService discountService,
+     EmailService emailService) {
         this.userService = userService;
         this.orderService = orderService;
         this.paymentService = paymentService;
         this.discountService = discountService;
+        this.emailService = emailService; // inject it here
+
     }
 
     // ---------------- Dashboard ----------------
