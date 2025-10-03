@@ -9,7 +9,6 @@ import com.ecommerce.ecommerce.repository.DiscountCouponRepository;
 import com.ecommerce.ecommerce.dto.ShippingAddressDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -141,22 +140,30 @@ public class OrderService {
 
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = getOrderById(orderId);
-        order.setStatus(newStatus);
 
+        // ✅ Check payment status before allowing SHIPPED
         if (newStatus == OrderStatus.SHIPPED) {
+            if (order.getPaymentStatus() != PaymentStatus.COMPLETED) {
+                throw new RuntimeException(
+                        "Order cannot be marked as SHIPPED until payment is COMPLETED."
+                );
+            }
             order.setShippedDate(LocalDateTime.now());
+
             // send shipped email
             emailService.sendShippingUpdate(
-                    order.getUser().getEmail(),              // to
-                    order.getUser().getFirstName(),          // userName
-                    order.getOrderNumber(),                  // orderNumber
-                    order.getStatus().name(),                // status
-                    "https://tracking.example.com/" + order.getId(),  // tracking link
-                    "3-5 business days"            // estimated delivery date (String or LocalDate.toString())
+                    order.getUser().getEmail(),
+                    order.getUser().getFirstName(),
+                    order.getOrderNumber(),
+                    order.getStatus().name(),
+                    "https://tracking.example.com/" + order.getId(),
+                    "3-5 business days"
             );
-        } else if (newStatus == OrderStatus.DELIVERED) {
+        }
+        else if (newStatus == OrderStatus.DELIVERED) {
             order.setDeliveredDate(LocalDateTime.now());
             releaseEscrowPayment(orderId);
+
             // notify admin
             emailService.sendAdminNotification(
                     "admin@store.com",
@@ -165,9 +172,9 @@ public class OrderService {
             );
         }
 
+        order.setStatus(newStatus);
         return orderRepository.save(order);
     }
-
 
     public Order cancelOrder(Long orderId) {
         Order order = getOrderById(orderId);
@@ -214,7 +221,6 @@ public class OrderService {
             return coupon.getDiscountValue().min(totalAmount);
         }
     }
-
     private boolean isCouponValid(DiscountCoupon coupon, User user) {
         if (!coupon.isActive()) return false;
         if (coupon.getExpiryDate().isBefore(LocalDateTime.now())) return false;
@@ -246,7 +252,6 @@ public class OrderService {
         }
         productRepository.save(product);
     }
-
     private void releaseEscrowPayment(Long orderId) {
         // Implementation for escrow release
         // This would interact with the PaymentService

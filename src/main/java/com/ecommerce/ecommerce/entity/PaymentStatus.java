@@ -1,5 +1,4 @@
 package com.ecommerce.ecommerce.entity;
-
 public enum PaymentStatus {
     PENDING,
     PROCESSING,
