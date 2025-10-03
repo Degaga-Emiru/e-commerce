@@ -1,11 +1,7 @@
 package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.entity.*;
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
-import com.ecommerce.ecommerce.repository.OrderRepository;
-import com.ecommerce.ecommerce.repository.OrderItemRepository;
-import com.ecommerce.ecommerce.repository.UserRepository;
-import com.ecommerce.ecommerce.repository.ProductRepository;
-import com.ecommerce.ecommerce.repository.DiscountCouponRepository;
+import com.ecommerce.ecommerce.repository.*;
 import com.ecommerce.ecommerce.dto.ShippingAddressDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,22 +21,39 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final DiscountCouponRepository couponRepository;
     private final EmailService emailService;
+    private final CartRepository cartRepository;
+
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                         UserRepository userRepository, ProductRepository productRepository,
-                        DiscountCouponRepository couponRepository, EmailService emailService) {
+                        DiscountCouponRepository couponRepository, EmailService emailService, CartRepository cartRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.couponRepository = couponRepository;
         this.emailService = emailService;
+        this.cartRepository = cartRepository;
     }
 
     public Order createOrder(Long userId, List<OrderItem> orderItems, ShippingAddressDto shippingAddressDto, String couponCode)
     {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        // ✅ Fetch user's cart
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found for user"));
+
+        // ✅ Check that each orderItem's product exists in the cart
+        for (OrderItem item : orderItems) {
+            boolean existsInCart = cart.getCartItems().stream()
+                    .anyMatch(cartItem -> cartItem.getProduct().getId().equals(item.getProduct().getId()));
+
+            if (!existsInCart) {
+                throw new RuntimeException("Product " + item.getProduct().getName() +
+                        " must be added to cart before ordering.");
+            }
+        }
 
         Order order = new Order();
         order.setUser(user);
