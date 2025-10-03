@@ -9,7 +9,6 @@ import com.ecommerce.ecommerce.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,7 +34,7 @@ public class DiscountService {
         this.orderRepository = orderRepository;
     }
 
-    public DiscountCoupon createCoupon(String code, DiscountType discountType, BigDecimal discountValue,
+    public DiscountCoupon createCoupon(String code, String name, DiscountType discountType, BigDecimal discountValue,
                                        LocalDateTime expiryDate, Integer usageLimit, boolean forNewUsers) {
         if (couponRepository.findByCode(code).isPresent()) {
             throw new RuntimeException("Coupon code already exists");
@@ -43,6 +42,7 @@ public class DiscountService {
 
         DiscountCoupon coupon = new DiscountCoupon();
         coupon.setCode(code.toUpperCase());
+        coupon.setName(name); // <-- set name here
         coupon.setDiscountType(discountType);
         coupon.setDiscountValue(discountValue);
         coupon.setExpiryDate(expiryDate);
@@ -55,12 +55,15 @@ public class DiscountService {
         return couponRepository.save(coupon);
     }
 
+
     public DiscountCoupon createNewUserWelcomeCoupon() {
         String code = "WELCOME" + newUserDiscountPercentage;
         BigDecimal discountValue = new BigDecimal(newUserDiscountPercentage);
+        String name = "Welcome " + newUserDiscountPercentage + "% Off"; // name for the coupon
 
         return createCoupon(
                 code,
+                name,
                 DiscountType.PERCENTAGE,
                 discountValue,
                 LocalDateTime.now().plusMonths(1), // Valid for 1 month

@@ -1,9 +1,7 @@
 package com.ecommerce.ecommerce.entity;
-
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "discount_coupons")
 public class DiscountCoupon {
@@ -73,7 +71,6 @@ public class DiscountCoupon {
         this.discountType = discountType;
         this.discountValue = discountValue;
     }
-
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -96,10 +93,15 @@ public class DiscountCoupon {
     public BigDecimal getMinOrderAmount() { return minOrderAmount; }
     public void setMinOrderAmount(BigDecimal minOrderAmount) { this.minOrderAmount = minOrderAmount; }
 
-    public Integer getUsageLimit() { return usageLimit; }
-    public void setUsageLimit(Integer usageLimit) { this.usageLimit = usageLimit; }
+    public Integer getUsageLimit() {
+        return usageLimit;
+    }
+    public void setUsageLimit(Integer usageLimit) {
+        this.usageLimit = usageLimit; }
 
-    public Integer getUsedCount() { return usedCount; }
+    public Integer getUsedCount() {
+        return usedCount;
+    }
     public void setUsedCount(Integer usedCount) { this.usedCount = usedCount; }
 
     public LocalDateTime getExpiryDate() { return expiryDate; }
@@ -110,19 +112,28 @@ public class DiscountCoupon {
     public boolean isActive() {
         return Boolean.TRUE.equals(active);
     }
-    public Boolean getForNewUsers() { return forNewUsers; }
-    public void setForNewUsers(Boolean forNewUsers) { this.forNewUsers = forNewUsers; }
+    public Boolean getForNewUsers() {
+        return forNewUsers; }
+    public void setForNewUsers(Boolean forNewUsers) {
+        this.forNewUsers = forNewUsers;
+    }
     public boolean isForNewUsers() {
         return Boolean.TRUE.equals(forNewUsers);
     }
     public Boolean getCombinable() { return combinable; }
-    public void setCombinable(Boolean combinable) { this.combinable = combinable; }
+    public void setCombinable(Boolean combinable) { this.combinable = combinable;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-
-
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }
