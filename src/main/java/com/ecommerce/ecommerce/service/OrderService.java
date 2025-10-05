@@ -35,30 +35,30 @@ public class OrderService {
         this.emailService = emailService;
         this.cartRepository = cartRepository;
     }
+    public Order createOrder(Long userId, List<OrderItem> orderItems,
+                             ShippingAddressDto shippingAddressDto, String couponCode) {
 
-    public Order createOrder(Long userId, List<OrderItem> orderItems, ShippingAddressDto shippingAddressDto, String couponCode)
-    {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        // ✅ Fetch user's cart
+
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user"));
 
-        // ✅ Check that each orderItem's product exists in the cart
-        for (OrderItem item : orderItems) {
-            boolean existsInCart = cart.getCartItems().stream()
-                    .anyMatch(cartItem -> cartItem.getProduct().getId().equals(item.getProduct().getId()));
+        Order order = new Order();
+        order.setUser(user); // ✅ buyer
 
-            if (!existsInCart) {
-                throw new RuntimeException("Product " + item.getProduct().getName() +
-                        " must be added to cart before ordering.");
-            }
+        // ✅ Assign seller (from the first product’s seller)
+        if (!orderItems.isEmpty()) {
+            Product firstProduct = productRepository.findById(orderItems.get(0).getProduct().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+            order.setSeller(firstProduct.getSeller());
         }
 
-        Order order = new Order();
-        order.setUser(user);
         order.setOrderNumber(generateOrderNumber());
         order.setStatus(OrderStatus.PENDING);
+        order.setOrderDate(LocalDateTime.now());
+        order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
+
         Address shippingAddress = new Address(
                 shippingAddressDto.getStreet(),
                 shippingAddressDto.getCity(),
@@ -68,19 +68,12 @@ public class OrderService {
         );
         order.setShippingAddress(shippingAddress);
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
-        order.setOrderDate(LocalDateTime.now());
-        order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
 
-
-        // Calculate totals
+        // 🧮 Calculate total and discount
         BigDecimal totalAmount = BigDecimal.ZERO;
         for (OrderItem item : orderItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-            if (product.getStockQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for product: " + product.getName());
-            }
 
             item.setUnitPrice(product.getPrice());
             item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
@@ -91,7 +84,6 @@ public class OrderService {
         order.setTotalAmount(totalAmount);
         order.setShippingAmount(calculateShipping(totalAmount));
 
-        // Apply discount if coupon provided
         BigDecimal discountAmount = BigDecimal.ZERO;
         if (couponCode != null && !couponCode.isEmpty()) {
             DiscountCoupon coupon = couponRepository.findByCode(couponCode)
@@ -111,27 +103,24 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Save order items
+        // Save order items and update stock
         for (OrderItem item : orderItems) {
             item.setOrder(savedOrder);
             orderItemRepository.save(item);
-
-            // Update product stock
             updateProductStock(item.getProduct().getId(), item.getQuantity());
         }
 
-        // Send order confirmation email
-        // ✅ CORRECT:
         emailService.sendOrderConfirmation(
-                user.getEmail(),           // to (email address)
-                user.getFirstName(),       // userName
-                savedOrder.getOrderNumber(), // orderNumber
-                finalAmount.doubleValue(), // totalAmount
-                null                       // trackingNumber (can be null)
+                user.getEmail(),
+                user.getFirstName(),
+                savedOrder.getOrderNumber(),
+                finalAmount.doubleValue(),
+                null
         );
 
         return savedOrder;
     }
+
 
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)

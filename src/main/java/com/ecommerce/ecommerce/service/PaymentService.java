@@ -55,7 +55,7 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("Payment not found for order"));
 
         payment.setEscrowReleased(true);
-        payment.setStatus(PaymentStatus.SUCCESS);
+        payment.setStatus(PaymentStatus.COMPLETED);
         paymentRepository.save(payment);
 
         return buildPaymentResponse(payment, "Funds released to seller after commission");
