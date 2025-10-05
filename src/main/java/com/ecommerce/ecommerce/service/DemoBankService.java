@@ -1,30 +1,34 @@
 package com.ecommerce.ecommerce.service;
+
 import com.ecommerce.ecommerce.entity.BankAccount;
+import com.ecommerce.ecommerce.entity.AccountType;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.repository.BankAccountRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
 @Transactional
 public class DemoBankService {
+
     private final BankAccountRepository bankAccountRepository;
     private final UserRepository userRepository;
+
+    // Assume there is a single platform escrow account
+    private final String PLATFORM_ESCROW_ACCOUNT_NUMBER = "ESCROW0001";
 
     public DemoBankService(BankAccountRepository bankAccountRepository, UserRepository userRepository) {
         this.bankAccountRepository = bankAccountRepository;
         this.userRepository = userRepository;
     }
 
-    public BankAccount createBankAccount(Long userId, BigDecimal initialBalance) {
+    public BankAccount createBankAccount(Long userId, BigDecimal initialBalance, AccountType type) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if user already has a bank account
         Optional<BankAccount> existingAccount = bankAccountRepository.findByUserId(userId);
         if (existingAccount.isPresent()) {
             throw new RuntimeException("User already has a bank account");
@@ -34,6 +38,7 @@ public class DemoBankService {
         bankAccount.setAccountHolderName(user.getFirstName() + " " + user.getLastName());
         bankAccount.setBalance(initialBalance);
         bankAccount.setUser(user);
+        bankAccount.setAccountType(type);
 
         return bankAccountRepository.save(bankAccount);
     }
@@ -43,65 +48,9 @@ public class DemoBankService {
                 .orElseThrow(() -> new RuntimeException("Bank account not found for user"));
     }
 
-    public BankAccount getBankAccountByEmail(String email) {
-        return bankAccountRepository.findByUserEmail(email)
-                .orElseThrow(() -> new RuntimeException("Bank account not found for email: " + email));
-    }
-
-    public boolean processPayment(String accountNumber, String routingNumber, BigDecimal amount, String description) {
-        try {
-            BankAccount account = bankAccountRepository
-                    .findByAccountNumberAndRoutingNumber(accountNumber, routingNumber)
-                    .orElseThrow(() -> new RuntimeException("Bank account not found"));
-
-            if (!account.getActive()) {
-                throw new RuntimeException("Bank account is not active");
-            }
-
-            if (account.getBalance().compareTo(amount) < 0) {
-                throw new RuntimeException("Insufficient funds");
-            }
-
-            // Deduct amount from account
-            account.setBalance(account.getBalance().subtract(amount));
-            bankAccountRepository.save(account);
-
-            // Log the transaction
-            System.out.println("Payment processed: " + description);
-            System.out.println("Account: " + accountNumber + ", Amount: $" + amount);
-            System.out.println("New Balance: $" + account.getBalance());
-
-            return true;
-        } catch (Exception e) {
-            System.err.println("Payment failed: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean processRefund(String accountNumber, String routingNumber, BigDecimal amount, String description) {
-        try {
-            BankAccount account = bankAccountRepository
-                    .findByAccountNumberAndRoutingNumber(accountNumber, routingNumber)
-                    .orElseThrow(() -> new RuntimeException("Bank account not found"));
-
-            if (!account.getActive()) {
-                throw new RuntimeException("Bank account is not active");
-            }
-
-            // Add amount back to account
-            account.setBalance(account.getBalance().add(amount));
-            bankAccountRepository.save(account);
-
-            // Log the transaction
-            System.out.println("Refund processed: " + description);
-            System.out.println("Account: " + accountNumber + ", Amount: $" + amount);
-            System.out.println("New Balance: $" + account.getBalance());
-
-            return true;
-        } catch (Exception e) {
-            System.err.println("Refund failed: " + e.getMessage());
-            return false;
-        }
+    public BankAccount getBankAccountByAccountNumber(String accountNumber) {
+        return bankAccountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Bank account not found"));
     }
 
     public BigDecimal getAccountBalance(Long userId) {
@@ -109,35 +58,71 @@ public class DemoBankService {
         return account.getBalance();
     }
 
-    public boolean transferFunds(String fromAccount, String toAccount, BigDecimal amount, String description) {
-        try {
-            // Withdraw from source account
-            boolean withdrawalSuccess = processPayment(fromAccount, "123456789", amount,
-                    "Transfer to " + toAccount + " - " + description);
+    // ====== Process payment (customer to escrow) ======
+    public boolean processPaymentToEscrow(String customerAccountNumber, BigDecimal amount) {
+        BankAccount customer = getBankAccountByAccountNumber(customerAccountNumber);
+        BankAccount escrow = getBankAccountByAccountNumber(PLATFORM_ESCROW_ACCOUNT_NUMBER);
 
-            if (!withdrawalSuccess) {
-                return false;
-            }
+        if (!customer.getActive()) throw new RuntimeException("Customer account inactive");
+        if (!escrow.getActive()) throw new RuntimeException("Escrow account inactive");
 
-            // Deposit to target account (simplified - in real system, this would be separate)
-            BankAccount targetAccount = bankAccountRepository.findByAccountNumber(toAccount)
-                    .orElseThrow(() -> new RuntimeException("Target account not found"));
-
-            targetAccount.setBalance(targetAccount.getBalance().add(amount));
-            bankAccountRepository.save(targetAccount);
-
-            System.out.println("Transfer completed: $" + amount + " from " + fromAccount + " to " + toAccount);
-            return true;
-        } catch (Exception e) {
-            System.err.println("Transfer failed: " + e.getMessage());
-            // Rollback logic would go here in a real system
-            return false;
+        if (customer.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient funds in customer account");
         }
+
+        // Deduct from customer
+        customer.setBalance(customer.getBalance().subtract(amount));
+        bankAccountRepository.save(customer);
+
+        // Deposit to escrow
+        escrow.setBalance(escrow.getBalance().add(amount));
+        bankAccountRepository.save(escrow);
+
+        return true;
     }
 
-    public BankAccount updateAccountBalance(Long userId, BigDecimal newBalance) {
-        BankAccount account = getBankAccountByUserId(userId);
-        account.setBalance(newBalance);
-        return bankAccountRepository.save(account);
+    // ====== Release funds to seller (with commission) ======
+    public boolean releaseFundsToSeller(String sellerAccountNumber, BigDecimal amount) {
+        BankAccount seller = getBankAccountByAccountNumber(sellerAccountNumber);
+        BankAccount escrow = getBankAccountByAccountNumber(PLATFORM_ESCROW_ACCOUNT_NUMBER);
+
+        if (!seller.getActive()) throw new RuntimeException("Seller account inactive");
+
+        // Deduct from escrow
+        if (escrow.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Escrow account has insufficient funds");
+        }
+        escrow.setBalance(escrow.getBalance().subtract(amount));
+        bankAccountRepository.save(escrow);
+
+        // Calculate 10% commission
+        BigDecimal commission = amount.multiply(BigDecimal.valueOf(0.10));
+        BigDecimal sellerAmount = amount.subtract(commission);
+
+        // Add to seller
+        seller.setBalance(seller.getBalance().add(sellerAmount));
+        bankAccountRepository.save(seller);
+
+        return true;
     }
+
+    // ====== Refund to customer ======
+    public boolean refundToCustomer(String customerAccountNumber, BigDecimal amount) {
+        BankAccount customer = getBankAccountByAccountNumber(customerAccountNumber);
+        BankAccount escrow = getBankAccountByAccountNumber(PLATFORM_ESCROW_ACCOUNT_NUMBER);
+
+        // Deduct from escrow
+        if (escrow.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Escrow has insufficient funds for refund");
+        }
+        escrow.setBalance(escrow.getBalance().subtract(amount));
+        bankAccountRepository.save(escrow);
+
+        // Add back to customer
+        customer.setBalance(customer.getBalance().add(amount));
+        bankAccountRepository.save(customer);
+
+        return true;
+    }
+
 }

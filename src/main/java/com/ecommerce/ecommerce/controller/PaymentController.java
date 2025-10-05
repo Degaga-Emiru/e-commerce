@@ -2,6 +2,7 @@ package com.ecommerce.ecommerce.controller;
 import com.ecommerce.ecommerce.dto.PaymentRequest;
 import com.ecommerce.ecommerce.dto.PaymentResponse;
 import com.ecommerce.ecommerce.service.PaymentService;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,9 +22,10 @@ public class PaymentController {
 
     @PostMapping("/process")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> processPayment(@RequestBody PaymentRequest request) {
+    public ResponseEntity<?> processPayment(Authentication authentication, @RequestBody PaymentRequest request) {
         try {
-            PaymentResponse response = paymentService.processPayment(request);
+            String customerEmail = authentication.getName();
+            PaymentResponse response = paymentService.processPayment(request, customerEmail);
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -34,6 +36,7 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         }
     }
+
 
     @PostMapping("/escrow/release")
     @PreAuthorize("hasRole('ADMIN')")
