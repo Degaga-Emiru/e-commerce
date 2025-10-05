@@ -62,6 +62,8 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cart cart;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private BankAccount bankAccount;
 
     @PrePersist
     protected void onCreate() {
@@ -135,4 +137,11 @@ public class User {
 
     public Cart getCart() { return cart; }
     public void setCart(Cart cart) { this.cart = cart; }
+    public BankAccount getBankAccount() {
+        return bankAccount;
+    }
+
+    public void setBankAccount(BankAccount bankAccount) {
+        this.bankAccount = bankAccount;
+    }
 }

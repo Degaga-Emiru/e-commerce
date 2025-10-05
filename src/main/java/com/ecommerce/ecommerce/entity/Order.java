@@ -15,10 +15,15 @@ public class Order {
 
     @Column(unique = true, nullable = false)
     private String orderNumber;
-
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    private User customer;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+    @ManyToOne
+    @JoinColumn(name = "seller_id")
+    private User seller; // or Merchant depending on your model
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -140,4 +145,14 @@ public class Order {
 
     public DiscountCoupon getDiscountCoupon() { return discountCoupon; }
     public void setDiscountCoupon(DiscountCoupon discountCoupon) { this.discountCoupon = discountCoupon; }
+    public User getSeller() { return seller; }
+    public void setSeller(User seller) { this.seller = seller; }
+
+    public User getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(User customer) {
+        this.customer = customer;
+    }
 }

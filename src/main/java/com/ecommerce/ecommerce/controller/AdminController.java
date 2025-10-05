@@ -49,10 +49,10 @@ public class AdminController {
             stats.put("pendingOrders", 12);
             stats.put("completedOrders", 125);
 
-            BigDecimal revenue = paymentService.getTotalRevenue(
-                    LocalDateTime.now().minusDays(30), LocalDateTime.now());
-            stats.put("revenueLast30Days", revenue);
-            stats.put("averageOrderValue", 89.99);
+//            BigDecimal revenue = paymentService.getTotalRevenue(
+//                    LocalDateTime.now().minusDays(30), LocalDateTime.now());
+//            stats.put("revenueLast30Days", revenue);
+//            stats.put("averageOrderValue", 89.99);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.controller;
-import com.ecommerce.ecommerce.dto.ApiResponse;
+
+import com.ecommerce.ecommerce.entity.AccountType;
 import com.ecommerce.ecommerce.entity.BankAccount;
 import com.ecommerce.ecommerce.service.DemoBankService;
 import org.springframework.http.ResponseEntity;
@@ -14,123 +15,95 @@ import java.util.Map;
 @RequestMapping("/api/bank")
 @CrossOrigin(origins = "*")
 public class BankController {
+
     private final DemoBankService demoBankService;
 
     public BankController(DemoBankService demoBankService) {
         this.demoBankService = demoBankService;
     }
 
-    @PostMapping("/accounts")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> createBankAccount(@RequestBody Map<String, Object> request) {
-        try {
-            Long userId = Long.valueOf(request.get("userId").toString());
-            BigDecimal initialBalance = new BigDecimal(request.get("initialBalance").toString());
+    // ===== Create Bank Account =====
+    @PostMapping("/create")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
+    public ResponseEntity<?> createBankAccount(@RequestParam Long userId,
+                                               @RequestParam BigDecimal initialBalance,
+                                               @RequestParam(required = false) String accountType) {
+        AccountType type = accountType != null ? AccountType.valueOf(accountType.toUpperCase()) : AccountType.CUSTOMER;
 
-            BankAccount account = demoBankService.createBankAccount(userId, initialBalance);
+        BankAccount account = demoBankService.createBankAccount(userId, initialBalance, type);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Bank account created successfully");
-            response.put("account", account);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("account", account);
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/accounts/user/{userId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    // ===== Get Bank Account By User ID =====
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<?> getBankAccountByUser(@PathVariable Long userId) {
-        try {
-            BankAccount account = demoBankService.getBankAccountByUserId(userId);
+        BankAccount account = demoBankService.getBankAccountByUserId(userId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("account", account);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("account", account);
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/accounts/balance/{userId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    // ===== Get Account Balance =====
+    @GetMapping("/balance/{userId}")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
     public ResponseEntity<?> getAccountBalance(@PathVariable Long userId) {
-        try {
-            BigDecimal balance = demoBankService.getAccountBalance(userId);
+        BigDecimal balance = demoBankService.getAccountBalance(userId);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("balance", balance);
-            response.put("currency", "USD");
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("balance", balance);
 
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/transfer")
+    // ===== Transfer Funds to Escrow =====
+    @PostMapping("/escrow/deposit")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> transferFunds(@RequestBody Map<String, Object> transferRequest) {
-        try {
-            String fromAccount = (String) transferRequest.get("fromAccount");
-            String toAccount = (String) transferRequest.get("toAccount");
-            BigDecimal amount = new BigDecimal(transferRequest.get("amount").toString());
-            String description = (String) transferRequest.get("description");
+    public ResponseEntity<?> depositToEscrow(@RequestParam String accountNumber,
+                                             @RequestParam BigDecimal amount) {
+        boolean success = demoBankService.processPaymentToEscrow(accountNumber, amount);
 
-            boolean success = demoBankService.transferFunds(fromAccount, toAccount, amount, description);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", success);
+        response.put("message", success ? "Funds deposited to escrow" : "Deposit failed");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", success);
-            response.put("message", success ? "Transfer completed successfully" : "Transfer failed");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/accounts/{userId}/balance")
+    // ===== Release Funds to Seller =====
+    @PostMapping("/escrow/release")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateAccountBalance(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
-        try {
-            BigDecimal newBalance = new BigDecimal(request.get("balance").toString());
+    public ResponseEntity<?> releaseFunds(@RequestParam String sellerAccountNumber,
+                                          @RequestParam BigDecimal amount) {
+        boolean success = demoBankService.releaseFundsToSeller(sellerAccountNumber, amount);
 
-            BankAccount account = demoBankService.updateAccountBalance(userId, newBalance);
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", success);
+        response.put("message", success ? "Funds released to seller" : "Release failed");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Account balance updated successfully");
-            response.put("account", account);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/validate")
-    public ResponseEntity<?> validateBankAccount(@RequestBody Map<String, Object> accountInfo) {
-        try {
-            String accountNumber = (String) accountInfo.get("accountNumber");
-            String routingNumber = (String) accountInfo.get("routingNumber");
+    // ===== Refund Customer =====
+    @PostMapping("/refund")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> refundCustomer(@RequestParam String customerAccountNumber,
+                                            @RequestParam BigDecimal amount) {
+        boolean success = demoBankService.refundToCustomer(customerAccountNumber, amount);
 
-            // Simple validation - in real system, this would check with bank API
-            boolean isValid = accountNumber != null && accountNumber.length() >= 8 &&
-                    routingNumber != null && routingNumber.equals("123456789");
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", success);
+        response.put("message", success ? "Refund successful" : "Refund failed");
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("valid", isValid);
-            response.put("message", isValid ? "Bank account is valid" : "Invalid bank account details");
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,15 +1,34 @@
 package com.ecommerce.ecommerce.dto;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.Map;
 public class PaymentRequest {
+
+    @NotNull
     private Long orderId;
+
+    @NotNull
     private String paymentMethod;
+
+    @NotNull
     private String accountNumber;
+
+    @NotNull
     private String routingNumber;
+
     private String cardHolderName;
     private String expiryDate;
     private String cvv;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal amount;
+
     private String currency = "USD";
+
+    // Optional: for multi-seller orders
+    private Map<Long, BigDecimal> sellerAmounts; // key = sellerId, value = subtotal for that seller
 
     // Getters and Setters
     public Long getOrderId() { return orderId; }
@@ -38,4 +57,7 @@ public class PaymentRequest {
 
     public String getCurrency() { return currency; }
     public void setCurrency(String currency) { this.currency = currency; }
+
+    public Map<Long, BigDecimal> getSellerAmounts() { return sellerAmounts; }
+    public void setSellerAmounts(Map<Long, BigDecimal> sellerAmounts) { this.sellerAmounts = sellerAmounts; }
 }

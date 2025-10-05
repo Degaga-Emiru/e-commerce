@@ -14,9 +14,8 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTransactionId(String transactionId);
-    List<Payment> findByOrderId(Long orderId);
     List<Payment> findByStatus(PaymentStatus status);
-
+    Optional<Payment> findByOrderId(Long orderId);  // Correct
     @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate")
     List<Payment> findByPaymentDateBetween(@Param("startDate") LocalDateTime startDate,
                                            @Param("endDate") LocalDateTime endDate);
