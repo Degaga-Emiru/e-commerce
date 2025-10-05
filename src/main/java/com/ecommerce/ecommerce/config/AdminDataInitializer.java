@@ -50,12 +50,12 @@ public class AdminDataInitializer implements CommandLineRunner {
     }
 
     private void createSellerUser() {
-        String sellerEmail = "seller@ecommerce.com";
+        String sellerEmail = "degagaemiru7@gmail.com";
         if (userRepository.findByEmail(sellerEmail).isEmpty()) {
             User sellerUser = new User();
             sellerUser.setEmail(sellerEmail);
             sellerUser.setPassword(passwordEncoder.encode("seller123"));
-            sellerUser.setFirstName("John");
+            sellerUser.setFirstName("Deguant");
             sellerUser.setLastName("Seller");
             sellerUser.setRole(UserRole.SELLER);
             sellerUser.setEnabled(true);

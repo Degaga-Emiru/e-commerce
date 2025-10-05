@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.controller;
 
+import com.ecommerce.ecommerce.dto.BankAccountRequest;
 import com.ecommerce.ecommerce.entity.AccountType;
 import com.ecommerce.ecommerce.entity.BankAccount;
 import com.ecommerce.ecommerce.service.DemoBankService;
@@ -22,21 +23,27 @@ public class BankController {
         this.demoBankService = demoBankService;
     }
 
-    // ===== Create Bank Account =====
     @PostMapping("/create")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN')")
-    public ResponseEntity<?> createBankAccount(@RequestParam Long userId,
-                                               @RequestParam BigDecimal initialBalance,
-                                               @RequestParam(required = false) String accountType) {
-        AccountType type = accountType != null ? AccountType.valueOf(accountType.toUpperCase()) : AccountType.CUSTOMER;
+    public ResponseEntity<?> createBankAccount(@RequestBody BankAccountRequest request) {
+        try {
+            var account = demoBankService.createBankAccount(
+                    request.getUserId(),
+                    request.getInitialBalance(),
+                    request.getAccountType()
+            );
 
-        BankAccount account = demoBankService.createBankAccount(userId, initialBalance, type);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("account", account);
+            response.put("message", "Bank account created successfully!");
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("account", account);
-
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 
     // ===== Get Bank Account By User ID =====
