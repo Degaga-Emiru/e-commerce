@@ -34,7 +34,7 @@ public class PaymentService {
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new RuntimeException("Order is not in a payable state");
         }
-
+        //added the payment logic for multi seller and single seller
         // Process payment through demo bank system
         boolean paymentSuccess = demoBankService.processPayment(
                 paymentRequest.getAccountNumber(),
