@@ -20,11 +20,12 @@ public class OrderService {
     private final DiscountCouponRepository couponRepository;
     private final EmailService emailService;
     private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                         UserRepository userRepository, ProductRepository productRepository,
-                        DiscountCouponRepository couponRepository, EmailService emailService, CartRepository cartRepository) {
+                        DiscountCouponRepository couponRepository, EmailService emailService, CartRepository cartRepository, CartItemRepository cartItemRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -32,131 +33,138 @@ public class OrderService {
         this.couponRepository = couponRepository;
         this.emailService = emailService;
         this.cartRepository = cartRepository;
+        this.cartItemRepository=cartItemRepository;
     }
     @Transactional
-    public List<Order> createOrder(Long userId, List<OrderItem> orderItems,
-                                   ShippingAddressDto shippingAddressDto, String couponCode) {
+    public Order createOrder(Long userId, List<OrderItem> orderItems,
+                             ShippingAddressDto shippingAddressDto, String couponCode) {
 
+        // ✅ 1. Fetch the user and their cart
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        Cart cart = cartRepository.findByUserId(userId)
+        Cart cart = cartRepository.findByUserIdWithItems(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user"));
 
-        // ✅ Group order items by seller
-        Map<User, List<OrderItem>> itemsBySeller = new HashMap<>();
+        // ✅ 2. Create base order
+        Order order = new Order();
+        order.setUser(user);
+
+        // ✅ Assign the seller (based on the first product in the order)
+        if (!orderItems.isEmpty()) {
+            Product firstProduct = productRepository.findById(orderItems.get(0).getProduct().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+            order.setSeller(firstProduct.getSeller());
+        }
+
+        order.setOrderNumber(generateOrderNumber());
+        order.setStatus(OrderStatus.PENDING);
+        order.setOrderDate(LocalDateTime.now());
+        order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
+
+        Address shippingAddress = new Address(
+                shippingAddressDto.getStreet(),
+                shippingAddressDto.getCity(),
+                shippingAddressDto.getState(),
+                shippingAddressDto.getZipCode(),
+                shippingAddressDto.getCountry()
+        );
+        order.setShippingAddress(shippingAddress);
+        order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
+
+        // ✅ 3. Validate and calculate totals
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
         for (OrderItem item : orderItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-            // ✅ Validate that product exists in cart
-            CartItem cartItem = cart.getCartItems().stream()
-                    .filter(ci -> ci.getProduct().getId().equals(product.getId()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException(
-                            "Product " + product.getName() + " is not in the cart"
-                    ));
+            // ✅ Check if product exists in user's cart
+            Optional<CartItem> cartItemOpt =
+                    cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
 
-            // ✅ Validate quantity
-            if (item.getQuantity() > cartItem.getQuantity()) {
-                throw new RuntimeException(
-                        "Requested quantity for product " + product.getName() +
-                                " exceeds cart quantity (" + cartItem.getQuantity() + ")"
-                );
+            if (cartItemOpt.isEmpty()) {
+                throw new RuntimeException("Product " + product.getName() +
+                        " must be added to your cart before ordering.");
             }
 
+            CartItem cartItem = cartItemOpt.get();
+
+            // ✅ Ensure requested quantity <= quantity in cart
+            if (item.getQuantity() > cartItem.getQuantity()) {
+                throw new RuntimeException("You only have " + cartItem.getQuantity() +
+                        " units of " + product.getName() + " in your cart.");
+            }
+
+            // ✅ Ensure enough stock
+            if (product.getStockQuantity() < item.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            }
+
+            // ✅ Set order item details
             item.setUnitPrice(product.getPrice());
             item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-            item.setProduct(product);
-
-            // Group by seller
-            itemsBySeller.computeIfAbsent(product.getSeller(), k -> new ArrayList<>()).add(item);
+            item.setOrder(order);
+            totalAmount = totalAmount.add(item.getTotalPrice());
         }
 
-        List<Order> createdOrders = new ArrayList<>();
+        order.setTotalAmount(totalAmount);
+        order.setShippingAmount(calculateShipping(totalAmount));
 
-        // ✅ Create one order per seller
-        for (Map.Entry<User, List<OrderItem>> entry : itemsBySeller.entrySet()) {
-            User seller = entry.getKey();
-            List<OrderItem> sellerItems = entry.getValue();
+        // ✅ 4. Apply discount if available
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (couponCode != null && !couponCode.isEmpty()) {
+            DiscountCoupon coupon = couponRepository.findByCode(couponCode)
+                    .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
 
-            Order order = new Order();
-            order.setUser(user); // buyer
-            order.setSeller(seller);
-            order.setOrderNumber(generateOrderNumber());
-            order.setStatus(OrderStatus.PENDING);
-            order.setOrderDate(LocalDateTime.now());
-            order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
-
-            Address shippingAddress = new Address(
-                    shippingAddressDto.getStreet(),
-                    shippingAddressDto.getCity(),
-                    shippingAddressDto.getState(),
-                    shippingAddressDto.getZipCode(),
-                    shippingAddressDto.getCountry()
-            );
-            order.setShippingAddress(shippingAddress);
-            order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
-
-            // 🧮 Calculate totals
-            BigDecimal totalAmount = sellerItems.stream()
-                    .map(OrderItem::getTotalPrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            order.setTotalAmount(totalAmount);
-            order.setShippingAmount(calculateShipping(totalAmount));
-
-            // Apply coupon if provided
-            BigDecimal discountAmount = BigDecimal.ZERO;
-            if (couponCode != null && !couponCode.isEmpty()) {
-                DiscountCoupon coupon = couponRepository.findByCode(couponCode)
-                        .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
-
-                if (!isCouponValid(coupon, user)) {
-                    throw new RuntimeException("Coupon is not valid for this order");
-                }
-
-                discountAmount = calculateDiscount(totalAmount, coupon);
-                order.setDiscountAmount(discountAmount);
-                order.setDiscountCoupon(coupon);
+            if (!isCouponValid(coupon, user)) {
+                throw new RuntimeException("Coupon is not valid for this order");
             }
 
-            BigDecimal finalAmount = totalAmount.add(order.getShippingAmount()).subtract(discountAmount);
-            order.setFinalAmount(finalAmount);
-
-            Order savedOrder = orderRepository.save(order);
-
-            // Save order items and update stock
-            for (OrderItem item : sellerItems) {
-                item.setOrder(savedOrder);
-                orderItemRepository.save(item);
-                updateProductStock(item.getProduct().getId(), item.getQuantity());
-
-                // ✅ Reduce quantity in cart
-                CartItem cartItem = cart.getCartItems().stream()
-                        .filter(ci -> ci.getProduct().getId().equals(item.getProduct().getId()))
-                        .findFirst().get();
-
-                cartItem.setQuantity(cartItem.getQuantity() - item.getQuantity());
-                if (cartItem.getQuantity() <= 0) {
-                    cart.getCartItems().remove(cartItem);
-                }
-            }
-
-            createdOrders.add(savedOrder);
-
-            // Send confirmation email per order
-            emailService.sendOrderConfirmation(
-                    user.getEmail(),
-                    user.getFirstName(),
-                    savedOrder.getOrderNumber(),
-                    finalAmount.doubleValue(),
-                    null
-            );
+            discountAmount = calculateDiscount(totalAmount, coupon);
+            order.setDiscountAmount(discountAmount);
+            order.setDiscountCoupon(coupon);
         }
 
+        // ✅ 5. Compute final amount
+        BigDecimal finalAmount = totalAmount.add(order.getShippingAmount()).subtract(discountAmount);
+        order.setFinalAmount(finalAmount);
+
+        // ✅ 6. Save order and items
+        Order savedOrder = orderRepository.save(order);
+
+        for (OrderItem item : orderItems) {
+            item.setOrder(savedOrder);
+            orderItemRepository.save(item);
+
+            // ✅ Update stock quantity after order
+            updateProductStock(item.getProduct().getId(), item.getQuantity());
+        }
+
+        // ✅ 7. Remove ordered items from cart
+        for (OrderItem item : orderItems) {
+            cartItemRepository.deleteByCartIdAndProductId(cart.getId(), item.getProduct().getId());
+        }
+
+        // ✅ Recalculate cart totals after clearing items
+        List<CartItem> remainingItems = cartItemRepository.findByCartId(cart.getId());
+        BigDecimal newTotal = remainingItems.stream()
+                .map(CartItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        cart.setTotalPrice(newTotal);
+        cart.setItemCount(remainingItems.stream().mapToInt(CartItem::getQuantity).sum());
         cartRepository.save(cart);
-        return createdOrders;
+
+        // ✅ 8. Send order confirmation email
+        emailService.sendOrderConfirmation(
+                user.getEmail(),
+                user.getFirstName(),
+                savedOrder.getOrderNumber(),
+                finalAmount.doubleValue(),
+                null
+        );
+
+        return savedOrder;
     }
 
 
