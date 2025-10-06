@@ -1,6 +1,5 @@
 // ProductMapper.java
 package com.ecommerce.ecommerce.mapper;
-
 import com.ecommerce.ecommerce.dto.ProductDto;
 import com.ecommerce.ecommerce.entity.Product;
 import org.mapstruct.Mapper;

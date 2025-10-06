@@ -8,9 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Transactional
@@ -35,8 +33,9 @@ public class OrderService {
         this.emailService = emailService;
         this.cartRepository = cartRepository;
     }
-    public Order createOrder(Long userId, List<OrderItem> orderItems,
-                             ShippingAddressDto shippingAddressDto, String couponCode) {
+    @Transactional
+    public List<Order> createOrder(Long userId, List<OrderItem> orderItems,
+                                   ShippingAddressDto shippingAddressDto, String couponCode) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -44,81 +43,120 @@ public class OrderService {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user"));
 
-        Order order = new Order();
-        order.setUser(user); // ✅ buyer
-
-        // ✅ Assign seller (from the first product’s seller)
-        if (!orderItems.isEmpty()) {
-            Product firstProduct = productRepository.findById(orderItems.get(0).getProduct().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-            order.setSeller(firstProduct.getSeller());
-        }
-
-        order.setOrderNumber(generateOrderNumber());
-        order.setStatus(OrderStatus.PENDING);
-        order.setOrderDate(LocalDateTime.now());
-        order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
-
-        Address shippingAddress = new Address(
-                shippingAddressDto.getStreet(),
-                shippingAddressDto.getCity(),
-                shippingAddressDto.getState(),
-                shippingAddressDto.getZipCode(),
-                shippingAddressDto.getCountry()
-        );
-        order.setShippingAddress(shippingAddress);
-        order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
-
-        // 🧮 Calculate total and discount
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        // ✅ Group order items by seller
+        Map<User, List<OrderItem>> itemsBySeller = new HashMap<>();
         for (OrderItem item : orderItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-            item.setUnitPrice(product.getPrice());
-            item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-            item.setOrder(order);
-            totalAmount = totalAmount.add(item.getTotalPrice());
-        }
+            // ✅ Validate that product exists in cart
+            CartItem cartItem = cart.getCartItems().stream()
+                    .filter(ci -> ci.getProduct().getId().equals(product.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException(
+                            "Product " + product.getName() + " is not in the cart"
+                    ));
 
-        order.setTotalAmount(totalAmount);
-        order.setShippingAmount(calculateShipping(totalAmount));
-
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (couponCode != null && !couponCode.isEmpty()) {
-            DiscountCoupon coupon = couponRepository.findByCode(couponCode)
-                    .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
-
-            if (!isCouponValid(coupon, user)) {
-                throw new RuntimeException("Coupon is not valid for this order");
+            // ✅ Validate quantity
+            if (item.getQuantity() > cartItem.getQuantity()) {
+                throw new RuntimeException(
+                        "Requested quantity for product " + product.getName() +
+                                " exceeds cart quantity (" + cartItem.getQuantity() + ")"
+                );
             }
 
-            discountAmount = calculateDiscount(totalAmount, coupon);
-            order.setDiscountAmount(discountAmount);
-            order.setDiscountCoupon(coupon);
+            item.setUnitPrice(product.getPrice());
+            item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            item.setProduct(product);
+
+            // Group by seller
+            itemsBySeller.computeIfAbsent(product.getSeller(), k -> new ArrayList<>()).add(item);
         }
 
-        BigDecimal finalAmount = totalAmount.add(order.getShippingAmount()).subtract(discountAmount);
-        order.setFinalAmount(finalAmount);
+        List<Order> createdOrders = new ArrayList<>();
 
-        Order savedOrder = orderRepository.save(order);
+        // ✅ Create one order per seller
+        for (Map.Entry<User, List<OrderItem>> entry : itemsBySeller.entrySet()) {
+            User seller = entry.getKey();
+            List<OrderItem> sellerItems = entry.getValue();
 
-        // Save order items and update stock
-        for (OrderItem item : orderItems) {
-            item.setOrder(savedOrder);
-            orderItemRepository.save(item);
-            updateProductStock(item.getProduct().getId(), item.getQuantity());
+            Order order = new Order();
+            order.setUser(user); // buyer
+            order.setSeller(seller);
+            order.setOrderNumber(generateOrderNumber());
+            order.setStatus(OrderStatus.PENDING);
+            order.setOrderDate(LocalDateTime.now());
+            order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
+
+            Address shippingAddress = new Address(
+                    shippingAddressDto.getStreet(),
+                    shippingAddressDto.getCity(),
+                    shippingAddressDto.getState(),
+                    shippingAddressDto.getZipCode(),
+                    shippingAddressDto.getCountry()
+            );
+            order.setShippingAddress(shippingAddress);
+            order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
+
+            // 🧮 Calculate totals
+            BigDecimal totalAmount = sellerItems.stream()
+                    .map(OrderItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            order.setTotalAmount(totalAmount);
+            order.setShippingAmount(calculateShipping(totalAmount));
+
+            // Apply coupon if provided
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            if (couponCode != null && !couponCode.isEmpty()) {
+                DiscountCoupon coupon = couponRepository.findByCode(couponCode)
+                        .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
+
+                if (!isCouponValid(coupon, user)) {
+                    throw new RuntimeException("Coupon is not valid for this order");
+                }
+
+                discountAmount = calculateDiscount(totalAmount, coupon);
+                order.setDiscountAmount(discountAmount);
+                order.setDiscountCoupon(coupon);
+            }
+
+            BigDecimal finalAmount = totalAmount.add(order.getShippingAmount()).subtract(discountAmount);
+            order.setFinalAmount(finalAmount);
+
+            Order savedOrder = orderRepository.save(order);
+
+            // Save order items and update stock
+            for (OrderItem item : sellerItems) {
+                item.setOrder(savedOrder);
+                orderItemRepository.save(item);
+                updateProductStock(item.getProduct().getId(), item.getQuantity());
+
+                // ✅ Reduce quantity in cart
+                CartItem cartItem = cart.getCartItems().stream()
+                        .filter(ci -> ci.getProduct().getId().equals(item.getProduct().getId()))
+                        .findFirst().get();
+
+                cartItem.setQuantity(cartItem.getQuantity() - item.getQuantity());
+                if (cartItem.getQuantity() <= 0) {
+                    cart.getCartItems().remove(cartItem);
+                }
+            }
+
+            createdOrders.add(savedOrder);
+
+            // Send confirmation email per order
+            emailService.sendOrderConfirmation(
+                    user.getEmail(),
+                    user.getFirstName(),
+                    savedOrder.getOrderNumber(),
+                    finalAmount.doubleValue(),
+                    null
+            );
         }
 
-        emailService.sendOrderConfirmation(
-                user.getEmail(),
-                user.getFirstName(),
-                savedOrder.getOrderNumber(),
-                finalAmount.doubleValue(),
-                null
-        );
-
-        return savedOrder;
+        cartRepository.save(cart);
+        return createdOrders;
     }
 
 

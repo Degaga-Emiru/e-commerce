@@ -175,5 +175,18 @@ public class CartService {
 
         clearCart(sourceUserId);
     }
+    public boolean hasSufficientQuantityInCart(Long userId, Long productId, int requestedQuantity) {
+        Cart cart = getOrCreateCart(userId);
+
+        Optional<CartItem> cartItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId);
+
+        if (cartItemOpt.isEmpty()) {
+            return false; // product not found in the cart
+        }
+
+        CartItem cartItem = cartItemOpt.get();
+        return cartItem.getQuantity() >= requestedQuantity; // ✅ check if quantity is enough
+    }
+
 
 }
