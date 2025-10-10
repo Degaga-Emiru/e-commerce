@@ -1,12 +1,10 @@
 package com.ecommerce.ecommerce.config;
-
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.UserRole;
 import com.ecommerce.ecommerce.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 
 @Component
@@ -24,6 +22,9 @@ public class AdminDataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         createAdminUser();
         createSellerUser();
+        createSellerUser2();
+        createSellerUser3();
+        createSellerUser4();
         createDeliveryStaffUser();
         createSupportStaffUser();
     }
@@ -69,6 +70,69 @@ public class AdminDataInitializer implements CommandLineRunner {
             System.out.println("ℹ️ Seller user already exists");
         }
     }
+    private void createSellerUser2() {
+        String sellerEmail = "seller2@ecommerce.com";
+        if (userRepository.findByEmail(sellerEmail).isEmpty()) {
+            User sellerUser = new User();
+            sellerUser.setEmail(sellerEmail);
+            sellerUser.setPassword(passwordEncoder.encode("seller123"));
+            sellerUser.setFirstName("Emily");
+            sellerUser.setLastName("Johnson");
+            sellerUser.setRole(UserRole.SELLER);
+            sellerUser.setEnabled(true);
+            sellerUser.setPhoneNumber("+1234567894");
+            sellerUser.setCreatedAt(LocalDateTime.now());
+            sellerUser.setUpdatedAt(LocalDateTime.now());
+
+            User savedSeller = userRepository.save(sellerUser);
+            System.out.println("✅ Seller 2 user created successfully with ID: " + savedSeller.getId());
+        } else {
+            System.out.println("ℹ️ Seller 2 user already exists");
+        }
+    }
+
+    private void createSellerUser3() {
+        String sellerEmail = "seller3@ecommerce.com";
+        if (userRepository.findByEmail(sellerEmail).isEmpty()) {
+            User sellerUser = new User();
+            sellerUser.setEmail(sellerEmail);
+            sellerUser.setPassword(passwordEncoder.encode("seller123"));
+            sellerUser.setFirstName("Michael");
+            sellerUser.setLastName("Brown");
+            sellerUser.setRole(UserRole.SELLER);
+            sellerUser.setEnabled(true);
+            sellerUser.setPhoneNumber("+1234567895");
+            sellerUser.setCreatedAt(LocalDateTime.now());
+            sellerUser.setUpdatedAt(LocalDateTime.now());
+
+            User savedSeller = userRepository.save(sellerUser);
+            System.out.println("✅ Seller 3 user created successfully with ID: " + savedSeller.getId());
+        } else {
+            System.out.println("ℹ️ Seller 3 user already exists");
+        }
+    }
+
+    private void createSellerUser4() {
+        String sellerEmail = "seller4@ecommerce.com";
+        if (userRepository.findByEmail(sellerEmail).isEmpty()) {
+            User sellerUser = new User();
+            sellerUser.setEmail(sellerEmail);
+            sellerUser.setPassword(passwordEncoder.encode("seller123"));
+            sellerUser.setFirstName("Sarah");
+            sellerUser.setLastName("Wilson");
+            sellerUser.setRole(UserRole.SELLER);
+            sellerUser.setEnabled(true);
+            sellerUser.setPhoneNumber("+1234567896");
+            sellerUser.setCreatedAt(LocalDateTime.now());
+            sellerUser.setUpdatedAt(LocalDateTime.now());
+
+            User savedSeller = userRepository.save(sellerUser);
+            System.out.println("✅ Seller 4 user created successfully with ID: " + savedSeller.getId());
+        } else {
+            System.out.println("ℹ️ Seller 4 user already exists");
+        }
+    }
+
 
     private void createDeliveryStaffUser() {
         String deliveryEmail = "delivery@ecommerce.com";

@@ -3,6 +3,7 @@ import com.ecommerce.ecommerce.entity.*;
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.ecommerce.repository.*;
 import com.ecommerce.ecommerce.dto.ShippingAddressDto;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -21,11 +22,14 @@ public class OrderService {
     private final EmailService emailService;
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
+    @Autowired
+    private SellerOrderRepository sellerOrderRepository;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
                         UserRepository userRepository, ProductRepository productRepository,
-                        DiscountCouponRepository couponRepository, EmailService emailService, CartRepository cartRepository, CartItemRepository cartItemRepository) {
+                        DiscountCouponRepository couponRepository, EmailService emailService,
+                        CartRepository cartRepository, CartItemRepository cartItemRepository,SellerOrderRepository sellerOrderRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -34,29 +38,22 @@ public class OrderService {
         this.emailService = emailService;
         this.cartRepository = cartRepository;
         this.cartItemRepository=cartItemRepository;
+        this.sellerOrderRepository = sellerOrderRepository;
     }
     @Transactional
     public Order createOrder(Long userId, List<OrderItem> orderItems,
                              ShippingAddressDto shippingAddressDto, String couponCode) {
 
-        // ✅ 1. Fetch the user and their cart
+        // 1️⃣ Fetch user and cart
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Cart cart = cartRepository.findByUserIdWithItems(userId)
                 .orElseThrow(() -> new RuntimeException("Cart not found for user"));
 
-        // ✅ 2. Create base order
+        // 2️⃣ Create main order
         Order order = new Order();
         order.setUser(user);
-
-        // ✅ Assign the seller (based on the first product in the order)
-        if (!orderItems.isEmpty()) {
-            Product firstProduct = productRepository.findById(orderItems.get(0).getProduct().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-            order.setSeller(firstProduct.getSeller());
-        }
-
         order.setOrderNumber(generateOrderNumber());
         order.setStatus(OrderStatus.PENDING);
         order.setOrderDate(LocalDateTime.now());
@@ -72,101 +69,111 @@ public class OrderService {
         order.setShippingAddress(shippingAddress);
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
 
-        // ✅ 3. Validate and calculate totals
         BigDecimal totalAmount = BigDecimal.ZERO;
+        Map<User, List<OrderItem>> sellerOrderMap = new HashMap<>();
+
+        // 3️⃣ Validate & prepare order items
+        List<OrderItem> preparedItems = new ArrayList<>();
+        List<CartItem> purchasedCartItems = new ArrayList<>(); // ✅ track only purchased items
 
         for (OrderItem item : orderItems) {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-            // ✅ Check if product exists in user's cart
-            Optional<CartItem> cartItemOpt =
-                    cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
-
+            Optional<CartItem> cartItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
             if (cartItemOpt.isEmpty()) {
-                throw new RuntimeException("Product " + product.getName() +
-                        " must be added to your cart before ordering.");
+                throw new RuntimeException("Product " + product.getName() + " is not in the cart.");
             }
 
             CartItem cartItem = cartItemOpt.get();
-
-            // ✅ Ensure requested quantity <= quantity in cart
             if (item.getQuantity() > cartItem.getQuantity()) {
                 throw new RuntimeException("You only have " + cartItem.getQuantity() +
                         " units of " + product.getName() + " in your cart.");
             }
 
-            // ✅ Ensure enough stock
             if (product.getStockQuantity() < item.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for product: " + product.getName());
             }
 
-            // ✅ Set order item details
-            item.setUnitPrice(product.getPrice());
-            item.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-            item.setOrder(order);
-            totalAmount = totalAmount.add(item.getTotalPrice());
+            // ✅ Build a fresh OrderItem (no direct link to CartItem)
+            OrderItem newItem = new OrderItem();
+            newItem.setProduct(product);
+            newItem.setQuantity(item.getQuantity());
+            newItem.setUnitPrice(product.getPrice());
+            newItem.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            newItem.setOrder(order);
+
+            totalAmount = totalAmount.add(newItem.getTotalPrice());
+
+            // Group by seller
+            sellerOrderMap.computeIfAbsent(product.getSeller(), s -> new ArrayList<>()).add(newItem);
+
+            // Update stock
+            updateProductStock(product.getId(), item.getQuantity());
+
+            preparedItems.add(newItem);
+            purchasedCartItems.add(cartItem); // ✅ track purchased cart items
         }
 
+        // 4️⃣ Set order totals
         order.setTotalAmount(totalAmount);
         order.setShippingAmount(calculateShipping(totalAmount));
+        order.setFinalAmount(totalAmount.add(order.getShippingAmount()));
 
-        // ✅ 4. Apply discount if available
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (couponCode != null && !couponCode.isEmpty()) {
-            DiscountCoupon coupon = couponRepository.findByCode(couponCode)
-                    .orElseThrow(() -> new RuntimeException("Invalid coupon code"));
-
-            if (!isCouponValid(coupon, user)) {
-                throw new RuntimeException("Coupon is not valid for this order");
-            }
-
-            discountAmount = calculateDiscount(totalAmount, coupon);
-            order.setDiscountAmount(discountAmount);
-            order.setDiscountCoupon(coupon);
-        }
-
-        // ✅ 5. Compute final amount
-        BigDecimal finalAmount = totalAmount.add(order.getShippingAmount()).subtract(discountAmount);
-        order.setFinalAmount(finalAmount);
-
-        // ✅ 6. Save order and items
+        // Save main order
         Order savedOrder = orderRepository.save(order);
 
-        for (OrderItem item : orderItems) {
-            item.setOrder(savedOrder);
-            orderItemRepository.save(item);
+        // 5️⃣ Create SellerOrders per seller
+        for (Map.Entry<User, List<OrderItem>> entry : sellerOrderMap.entrySet()) {
+            User seller = entry.getKey();
+            List<OrderItem> sellerItems = entry.getValue();
 
-            // ✅ Update stock quantity after order
-            updateProductStock(item.getProduct().getId(), item.getQuantity());
+            SellerOrder sellerOrder = new SellerOrder();
+            sellerOrder.setOrder(savedOrder);
+            sellerOrder.setSeller(seller);
+            sellerOrder.setStatus(SellerOrderStatus.PENDING);
+
+            BigDecimal sellerTotal = sellerItems.stream()
+                    .map(OrderItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            sellerOrder.setSubtotal(sellerTotal);
+
+            SellerOrder savedSellerOrder = sellerOrderRepository.save(sellerOrder);
+
+            // ✅ Link each OrderItem to its SellerOrder
+            for (OrderItem sellerItem : sellerItems) {
+                sellerItem.setSellerOrder(savedSellerOrder);
+            }
+
+            orderItemRepository.saveAll(sellerItems);
         }
 
-        // ✅ 7. Remove ordered items from cart
-        for (OrderItem item : orderItems) {
-            cartItemRepository.deleteByCartIdAndProductId(cart.getId(), item.getProduct().getId());
+        // 6️⃣ Delete only purchased items (safe deletion)
+        for (CartItem purchasedItem : purchasedCartItems) {
+            cartItemRepository.delete(purchasedItem);
         }
 
-        // ✅ Recalculate cart totals after clearing items
+        // 7️⃣ Update cart totals after deletion
         List<CartItem> remainingItems = cartItemRepository.findByCartId(cart.getId());
         BigDecimal newTotal = remainingItems.stream()
-                .map(CartItem::getTotalPrice)
+                .map(ci -> ci.getProduct().getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         cart.setTotalPrice(newTotal);
-        cart.setItemCount(remainingItems.stream().mapToInt(CartItem::getQuantity).sum());
+        cart.setItemCount(remainingItems.size());
         cartRepository.save(cart);
 
-        // ✅ 8. Send order confirmation email
+        // 8️⃣ Send confirmation email
         emailService.sendOrderConfirmation(
                 user.getEmail(),
                 user.getFirstName(),
                 savedOrder.getOrderNumber(),
-                finalAmount.doubleValue(),
+                savedOrder.getFinalAmount().doubleValue(),
                 null
         );
 
         return savedOrder;
     }
-
 
     public Order getOrderById(Long orderId) {
         return orderRepository.findById(orderId)
