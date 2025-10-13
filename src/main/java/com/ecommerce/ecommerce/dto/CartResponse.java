@@ -1,5 +1,5 @@
 package com.ecommerce.ecommerce.dto;
-
+//Cart Response Dto that map the request to this response and display necessary data only
 import java.math.BigDecimal;
 import java.util.List;
 
