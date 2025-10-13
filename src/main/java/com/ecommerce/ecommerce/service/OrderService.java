@@ -308,7 +308,55 @@ public class OrderService {
         productRepository.save(product);
     }
     private void releaseEscrowPayment(Long orderId) {
-        // Implementation for escrow release
-        // This would interact with the PaymentService
+        // Fetch the order
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        List<OrderItem> orderItems = order.getOrderItems();
+        if (orderItems.isEmpty()) {
+            throw new IllegalStateException("No order items found for this order");
+        }
+
+        // Group order items by seller via SellerOrder
+        Map<User, List<OrderItem>> itemsBySeller = new HashMap<>();
+        for (OrderItem item : orderItems) {
+            SellerOrder sellerOrder = item.getSellerOrder();
+            if (sellerOrder == null) {
+                throw new IllegalStateException("SellerOrder not found for OrderItem id: " + item.getId());
+            }
+
+            User seller = sellerOrder.getSeller();
+            if (seller == null) {
+                throw new IllegalStateException("Seller not found for SellerOrder id: " + sellerOrder.getId());
+            }
+
+            itemsBySeller.computeIfAbsent(seller, s -> new ArrayList<>()).add(item);
+        }
+
+        // Release payments to each seller
+        for (Map.Entry<User, List<OrderItem>> entry : itemsBySeller.entrySet()) {
+            User seller = entry.getKey();
+            List<OrderItem> sellerItems = entry.getValue();
+
+            BigDecimal totalAmount = sellerItems.stream()
+                    .map(OrderItem::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BankAccount bankAccount = seller.getBankAccount();
+            if (bankAccount == null) {
+                throw new IllegalStateException("Seller " + seller.getId() + " has no bank account");
+            }
+
+            // Call your actual payment release logic here
+            releaseToSeller(bankAccount, totalAmount);
+
+            System.out.println("Released " + totalAmount + " to seller " + seller.getId());
+        }
     }
+
+    // Dummy implementation — replace with your real payment gateway integration
+    private void releaseToSeller(BankAccount bankAccount, BigDecimal amount) {
+        System.out.println("Releasing " + amount + " to account " + bankAccount.getAccountNumber());
+    }
+
 }
