@@ -136,7 +136,7 @@ public class ProductService {
             product.setCategory(category);
         }
 
-        // Handle image upload
+        // Handle image upload when the admin or seller added the new product
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = fileStorageService.storeFile(imageFile);
             product.setImageUrl(imageUrl);
@@ -148,7 +148,7 @@ public class ProductService {
         return productMapper.toDto(savedProduct);
     }
 
-    // ✅ NEW: Update product using ProductDto with authorization check
+    // ✅ NEW: Update product using ProductDto with authorization check that retrive the information  of the custmer from the jwt
     public ProductDto updateProduct(ProductDto productDto, Long sellerId, MultipartFile imageFile) {
         Product existingProduct = getProductEntityById(productDto.getId());
 
