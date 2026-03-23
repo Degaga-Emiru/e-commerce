@@ -9,6 +9,7 @@ public class CartItemResponse {
     private Integer quantity;
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
+    private String productImage;
 
     // getters and setters
     public Long getId() { return id; }
@@ -28,4 +29,7 @@ public class CartItemResponse {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public String getProductImage() { return productImage; }
+    public void setProductImage(String productImage) { this.productImage = productImage; }
 }

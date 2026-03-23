@@ -1,13 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, Package, Settings, LogOut, ChevronRight } from 'lucide-react';
+import { User, Package, Settings, LogOut, ChevronRight, MapPin, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import AddressSection from '@/components/profile/AddressSection';
+import DashboardStats from '@/components/profile/DashboardStats';
 
 const ProfilePage = () => {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<'menu' | 'addresses' | 'orders'>('menu');
   const router = useRouter();
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div></div>;
@@ -24,34 +27,48 @@ const ProfilePage = () => {
   };
 
   const menuItems = [
-    { icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
-    { icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
-    { icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' },
+    { id: 'orders', icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
+    { id: 'addresses', icon: <MapPin size={20} />, label: 'My Addresses', description: 'Manage your shipping addresses' },
+    { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
+    { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' },
   ];
 
-  return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
-        {/* Header */}
-        <div className="bg-orange-500 p-8 text-white flex items-center space-x-6">
-          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
-            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'addresses':
+        return (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <button 
+              onClick={() => setActiveTab('menu')}
+              className="flex items-center gap-2 text-gray-500 hover:text-orange-500 mb-6 font-bold transition-colors"
+            >
+              <ArrowLeft size={20} />
+              Back to Profile
+            </button>
+            <AddressSection />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h1>
-            <p className="opacity-80">{user?.email}</p>
-            <span className="inline-block bg-white/20 px-3 py-1 rounded-full text-xs mt-2 uppercase font-mono tracking-widest font-bold">
-              {user?.role} Account
-            </span>
+        );
+      case 'orders':
+        return (
+          <div className="text-center py-12">
+            <Package size={48} className="mx-auto text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium">Order history coming soon!</p>
+            <button onClick={() => setActiveTab('menu')} className="mt-4 text-orange-500 font-bold">Back</button>
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-8">
-          <div className="grid grid-cols-1 gap-4">
+        );
+      default:
+        return (
+          <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-left-4 duration-300">
             {menuItems.map((item) => (
               <button
                 key={item.label}
+                onClick={() => {
+                  if (item.id === 'addresses' || item.id === 'orders') {
+                    setActiveTab(item.id as any);
+                  } else {
+                    toast.error(`${item.label} features coming soon!`);
+                  }
+                }}
                 className="flex items-center justify-between p-6 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-200 group text-left"
               >
                 <div className="flex items-center space-x-4">
@@ -75,6 +92,31 @@ const ProfilePage = () => {
               <span>Sign Out</span>
             </button>
           </div>
+        );
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        {/* Header */}
+        <div className="bg-orange-500 p-8 text-white flex items-center space-x-6">
+          <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl font-bold">
+            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">{user?.firstName} {user?.lastName}</h1>
+            <p className="opacity-80">{user?.email}</p>
+            <span className="inline-block bg-white/20 px-3 py-1 rounded-full text-xs mt-2 uppercase font-mono tracking-widest font-bold">
+              {user?.role} Account
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-8">
+          {activeTab === 'menu' && <DashboardStats />}
+          {renderContent()}
         </div>
       </div>
     </div>

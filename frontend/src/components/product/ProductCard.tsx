@@ -19,6 +19,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  if (!product) return null;
   const { addToCart } = useCart();
 
   const handleAddToCart = (e: React.MouseEvent) => {

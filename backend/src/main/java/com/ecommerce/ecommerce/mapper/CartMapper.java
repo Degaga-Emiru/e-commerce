@@ -14,6 +14,7 @@ public class CartMapper {
         dto.setQuantity(item.getQuantity());
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
+        dto.setProductImage(item.getProduct().getImageUrl());
         return dto;
     }
 

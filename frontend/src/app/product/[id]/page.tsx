@@ -114,7 +114,7 @@ const ProductDetails = () => {
       <div className="mt-20">
         <h2 className="text-2xl font-bold mb-8">Technical Specifications</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-          {product.specs.map((spec: any) => (
+          {product.specs && product.specs.map((spec: any) => (
             <div key={spec.name} className="flex justify-between py-4 border-b border-gray-100">
               <span className="text-gray-500 font-medium">{spec.name}</span>
               <span className="text-gray-900 font-semibold">{spec.value}</span>

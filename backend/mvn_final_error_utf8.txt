@@ -1,0 +1,25 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.ecommerce:ecommerce-backend >-------------------
+[INFO] Building Ecommerce Backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ecommerce-backend ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 6 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ecommerce-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 110 source files with javac [debug parameters release 17] to target\classes
+[WARNING] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/mapper/ProductMapper.java:[17,16] Unmapped target properties: "averageRating, reviewCount".
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java: D:\E-Commerce\backend\src\main\java\com\ecommerce\ecommerce\config\SecurityConfig.java uses or overrides a deprecated API.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/controller/CartController.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/controller/CartController.java: Recompile with -Xlint:unchecked for details.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  13.408 s
+[INFO] Finished at: 2026-03-23T15:29:45+03:00
+[INFO] ------------------------------------------------------------------------

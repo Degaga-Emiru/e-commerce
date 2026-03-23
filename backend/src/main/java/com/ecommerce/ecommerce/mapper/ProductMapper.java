@@ -12,7 +12,7 @@ public interface ProductMapper {
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
     @Mapping(target = "sellerId", source = "seller.id")
-    @Mapping(target = "sellerName", expression = "java(product.getSeller().getFirstName() + \" \" + product.getSeller().getLastName())")
+    @Mapping(target = "sellerName", expression = "java(product.getSeller() != null ? product.getSeller().getFirstName() + \" \" + product.getSeller().getLastName() : \"Unknown Seller\")")
     @Mapping(target = "status", source = "status")
     ProductDto toDto(Product product);
 

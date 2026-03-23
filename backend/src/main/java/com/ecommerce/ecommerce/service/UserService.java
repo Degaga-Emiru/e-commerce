@@ -153,6 +153,10 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
+    public Long getUserIdByEmail(String email) {
+        return getUserByEmail(email).getId();
+    }
+
     public List<User> getUsersByRole(UserRole role) {
         return userRepository.findByRole(role);
     }

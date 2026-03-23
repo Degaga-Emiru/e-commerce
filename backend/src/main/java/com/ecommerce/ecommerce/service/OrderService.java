@@ -70,7 +70,9 @@ public class OrderService {
                 shippingAddressDto.getCity(),
                 shippingAddressDto.getState(),
                 shippingAddressDto.getZipCode(),
-                shippingAddressDto.getCountry()
+                shippingAddressDto.getCountry(),
+                shippingAddressDto.getPhoneNumber(),
+                user
         );
         order.setShippingAddress(shippingAddress);
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
