@@ -12,25 +12,35 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: String | null;
+  token: string | null;
   login: (user: User, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<String | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     const savedToken = localStorage.getItem('token');
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
-      setToken(savedToken);
+    
+    if (savedUser && savedToken && savedToken !== 'undefined') {
+      try {
+        setUser(JSON.parse(savedUser));
+        setToken(savedToken);
+      } catch (error) {
+        console.error('Failed to parse saved user:', error);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
     }
+    setIsLoading(false);
   }, []);
 
   const login = (user: User, token: string) => {
@@ -48,7 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      token, 
+      login, 
+      logout, 
+      isAuthenticated: !!user && !!token,
+      isLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );

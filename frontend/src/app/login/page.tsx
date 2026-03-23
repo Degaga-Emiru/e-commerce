@@ -47,9 +47,9 @@ const LoginPage = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
       // Backend returns AuthResponse directly: { jwt, id, email, firstName, lastName, role }
-      const { jwt } = response.data;
+      const { token } = response.data;
       
-      login(response.data, jwt);
+      login(response.data, token);
       toast.success('Welcome back!');
       router.push('/');
     } catch (error: any) {

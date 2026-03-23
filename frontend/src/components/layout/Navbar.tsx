@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const Navbar = () => {
   const { cartCount } = useCart();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const pathname = usePathname();
   
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/verify-otp';
@@ -45,9 +45,11 @@ const Navbar = () => {
             )}
           </Link>
 
-          <Link href={isAuthenticated ? "/profile" : "/login"} className="text-gray-700 hover:text-orange-500 transition-colors">
-            <User size={24} />
-          </Link>
+          {!isLoading && (
+            <Link href={isAuthenticated ? "/profile" : "/login"} className="text-gray-700 hover:text-orange-500 transition-colors">
+              <User size={24} />
+            </Link>
+          )}
 
           <button className="md:hidden text-gray-700">
             <Menu size={24} />
