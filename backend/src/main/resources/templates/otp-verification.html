@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            padding: 30px 20px;
+            background: white;
+        }
+        .otp-code {
+            font-size: 42px;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 8px;
+            color: #667eea;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Verify Your Email Address</h1>
+    </div>
+    <div class="content">
+        <p>Hello <strong th:text="${userName}">User</strong>,</p>
+        <p>Thank you for registering with our e-commerce platform. To complete your registration and secure your account, please use the following One-Time Password (OTP) to verify your email address:</p>
+
+        <div class="otp-code" th:text="${otpCode}">123456</div>
+
+        <div class="warning">
+            <strong>Important:</strong> This OTP code will expire in <strong th:text="${expirationMinutes}">15</strong> minutes.
+            Please do not share this code with anyone.
+        </div>
+
+        <p>If you didn't create an account with us, please ignore this email or contact our support team if you have concerns.</p>
+
+        <p>Welcome aboard!<br>The E-Commerce Team</p>
+    </div>
+    <div class="footer">
+        <p>&copy; <span th:text="${currentYear}">2024</span> E-Commerce Platform. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>

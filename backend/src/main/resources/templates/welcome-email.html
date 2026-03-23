@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Platform</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            padding: 30px 20px;
+            background: white;
+        }
+        .welcome-message {
+            font-size: 20px;
+            color: #28a745;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .benefits {
+            margin: 30px 0;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        .benefit-item {
+            margin: 15px 0;
+            padding-left: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .benefit-item:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 15px 0;
+            transition: transform 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #666;
+            padding: 20px;
+            border-top: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Welcome to Our E-Commerce Family! 🎉</h1>
+    </div>
+    <div class="content">
+        <div class="welcome-message">
+            <p>Hello <strong th:text="${userName}">User</strong>,</p>
+            <p>We're thrilled to welcome you to our e-commerce platform! Your account has been successfully verified and you're now part of our growing community.</p>
+        </div>
+
+        <div class="benefits">
+            <h3>✨ As a new member, you enjoy exclusive benefits:</h3>
+            <div class="benefit-item">10% welcome discount on your first purchase</div>
+            <div class="benefit-item">Early access to new arrivals and special promotions</div>
+            <div class="benefit-item">Priority customer support for all your inquiries</div>
+            <div class="benefit-item">Fast and secure checkout with multiple payment options</div>
+            <div class="benefit-item">Personalized product recommendations just for you</div>
+            <div class="benefit-item">Earn loyalty points on every purchase</div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Ready to Start Shopping?</h2>
+            <p>Discover amazing products at great prices and experience seamless shopping.</p>
+            <a href="#" class="cta-button">Start Shopping Now</a>
+            <p><small>Use code: WELCOME10 at checkout for your discount</small></p>
+        </div>
+
+        <p>If you have any questions, feel free to reach out to our support team - we're here to help!</p>
+
+        <p>Happy shopping! 🛍️<br><strong>The E-Commerce Team</strong></p>
+    </div>
+    <div class="footer">
+        <p>&copy; <span th:text="${currentYear}">2024</span> E-Commerce Platform. All rights reserved.</p>
+        <p>This is an automated message, please do not reply to this email.</p>
+    </div>
+</div>
+</body>
+</html>
