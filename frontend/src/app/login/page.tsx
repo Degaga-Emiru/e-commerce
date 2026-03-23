@@ -46,12 +46,16 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const response = await api.post('/auth/login', { email, password });
-      // Backend returns AuthResponse directly: { jwt, id, email, firstName, lastName, role }
       const { token } = response.data;
       
       login(response.data, token);
       toast.success('Welcome back!');
-      router.push('/');
+
+      // Role-based redirect
+      const role = response.data.role;
+      if (role === 'SELLER') router.push('/seller/dashboard');
+      else if (role === 'ADMIN') router.push('/admin/dashboard');
+      else router.push('/');
     } catch (error: any) {
       console.error('Login error:', error);
       const errorMsg = error.response?.data?.message || 'Login failed. Please check your credentials.';

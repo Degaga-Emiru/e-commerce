@@ -385,4 +385,8 @@ public class OrderService {
         orderRepository.save(order);
     }
 
+    public List<Order> getOrdersBySeller(Long sellerId) {
+        return orderRepository.findOrdersBySellerId(sellerId);
+    }
+
 }

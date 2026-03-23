@@ -3,9 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, User, Search, Menu } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, BarChart2, Store } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { cartCount } = useCart();
@@ -22,7 +23,7 @@ const Navbar = () => {
           E<span className="text-orange-500 group-hover:text-gray-900 transition-colors">STORE</span>
         </Link>
 
-        {/* Search Bar - Desktop (Hidden on Auth Pages) */}
+        {/* Search Bar */}
         {!isAuthPage && (
           <div className="hidden md:flex flex-1 mx-12 relative group">
             <input
@@ -35,7 +36,25 @@ const Navbar = () => {
         )}
 
         {/* Actions */}
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
+          {/* Role-specific dashboard links */}
+          {!isLoading && isAuthenticated && (
+            <>
+              {user?.role === 'SELLER' && (
+                <Link href="/seller/dashboard" title="Seller Dashboard"
+                  className="hidden md:flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors text-sm font-semibold">
+                  <Store size={18} /> Shop
+                </Link>
+              )}
+              {user?.role === 'ADMIN' && (
+                <Link href="/admin/dashboard" title="Admin Dashboard"
+                  className="hidden md:flex items-center gap-1 text-gray-600 hover:text-indigo-600 transition-colors text-sm font-semibold">
+                  <BarChart2 size={18} /> Admin
+                </Link>
+              )}
+            </>
+          )}
+
           <Link href="/cart" className="relative text-gray-700 hover:text-orange-500 transition-colors">
             <ShoppingCart size={24} />
             {cartCount > 0 && (
@@ -44,6 +63,8 @@ const Navbar = () => {
               </span>
             )}
           </Link>
+
+          <NotificationBell />
 
           {!isLoading && (
             <Link href={isAuthenticated ? "/profile" : "/login"} className="text-gray-700 hover:text-orange-500 transition-colors">
