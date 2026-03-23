@@ -11,9 +11,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ChapaService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ChapaService.class);
 
     @Value("${chapa.secret.key}")
     private String secretKey;
@@ -32,6 +36,7 @@ public class ChapaService {
 
     public ChapaInitializeResponse initializeTransaction(Order order) {
         String url = baseUrl + "/transaction/initialize";
+        logger.info("Initializing Chapa transaction for order: {}", order.getOrderNumber());
 
         ChapaInitializeRequest request = ChapaInitializeRequest.builder()
                 .amount(order.getFinalAmount())
@@ -53,14 +58,18 @@ public class ChapaService {
         HttpEntity<ChapaInitializeRequest> entity = new HttpEntity<>(request, headers);
 
         try {
-            return restTemplate.postForObject(url, entity, ChapaInitializeResponse.class);
+            ChapaInitializeResponse response = restTemplate.postForObject(url, entity, ChapaInitializeResponse.class);
+            logger.debug("Chapa initialize response: {}", response);
+            return response;
         } catch (Exception e) {
+            logger.error("Failed to initialize Chapa transaction: {}", e.getMessage());
             throw new RuntimeException("Failed to initialize Chapa transaction: " + e.getMessage());
         }
     }
 
     public ChapaVerifyResponse verifyTransaction(String txRef) {
         String url = baseUrl + "/transaction/verify/" + txRef;
+        logger.info("Verifying Chapa transaction with reference: {}", txRef);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(secretKey);
@@ -68,8 +77,11 @@ public class ChapaService {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         try {
-            return restTemplate.exchange(url, HttpMethod.GET, entity, ChapaVerifyResponse.class).getBody();
+            ChapaVerifyResponse response = restTemplate.exchange(url, HttpMethod.GET, entity, ChapaVerifyResponse.class).getBody();
+            logger.info("Chapa verify API call success. Status: {}", response != null ? response.getStatus() : "null");
+            return response;
         } catch (Exception e) {
+            logger.error("Chapa verify API call failed: {}", e.getMessage());
             throw new RuntimeException("Failed to verify Chapa transaction: " + e.getMessage());
         }
     }

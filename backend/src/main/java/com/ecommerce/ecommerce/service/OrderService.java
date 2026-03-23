@@ -114,7 +114,16 @@ public class OrderService {
             totalAmount = totalAmount.add(newItem.getTotalPrice());
 
             // Group by seller
-            sellerOrderMap.computeIfAbsent(product.getSeller(), s -> new ArrayList<>()).add(newItem);
+            User seller = product.getSeller();
+            if (seller == null) {
+                // 🛡️ Fallback: Assign first Admin if product is missing a seller
+                seller = userRepository.findByRole(UserRole.ADMIN).stream().findFirst()
+                        .orElseThrow(() -> new RuntimeException("Product " + product.getName() + " has no seller and no Admin fallback found."));
+                product.setSeller(seller);
+                productRepository.save(product);
+                System.out.println("⚠️ Warning: Product " + product.getId() + " was missing a seller. Assigned Admin as fallback.");
+            }
+            sellerOrderMap.computeIfAbsent(seller, s -> new ArrayList<>()).add(newItem);
 
             // Update stock
             updateProductStock(product.getId(), item.getQuantity());
@@ -194,7 +203,13 @@ public class OrderService {
     }
 
     public List<Order> getUserOrders(Long userId) {
-        return orderRepository.findByUserId(userId);
+        return orderRepository.findUserOrdersByDateDesc(userId);
+    }
+
+    public List<Order> getUserOrdersByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return orderRepository.findUserOrdersByDateDesc(user.getId());
     }
 
     public List<Order> getOrdersByStatus(OrderStatus status) {

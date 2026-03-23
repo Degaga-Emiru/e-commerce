@@ -166,6 +166,10 @@ public class ProductService {
         existingProduct.setDescription(productDto.getDescription());
         existingProduct.setPrice(productDto.getPrice());
         existingProduct.setStockQuantity(productDto.getStockQuantity());
+        // Fix: Update imageUrl from DTO if provided (for manual URL entry)
+        if (productDto.getImageUrl() != null && !productDto.getImageUrl().isBlank()) {
+            existingProduct.setImageUrl(productDto.getImageUrl());
+        }
         existingProduct.setUpdatedAt(LocalDateTime.now());
 
         // Update category if provided

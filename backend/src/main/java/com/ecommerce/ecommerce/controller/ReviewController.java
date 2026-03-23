@@ -1,21 +1,29 @@
 package com.ecommerce.ecommerce.controller;
+
+import com.ecommerce.ecommerce.dto.ApiResponse;
 import com.ecommerce.ecommerce.entity.Review;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.repository.UserRepository;
 import com.ecommerce.ecommerce.service.ReviewService;
+import com.ecommerce.ecommerce.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.ecommerce.ecommerce.dto.ApiResponse;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/reviews")
 @CrossOrigin(origins = "*")
 public class ReviewController {
     private final ReviewService reviewService;
+    private final UserRepository userRepository;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService, UserRepository userRepository) {
         this.reviewService = reviewService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -39,6 +47,29 @@ public class ReviewController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/check")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> checkReviewEligibility(@RequestParam Long productId) {
+        try {
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            boolean hasPurchased = reviewService.hasUserPurchasedProduct(user.getId(), productId);
+            boolean hasReviewed = reviewService.hasUserReviewedProduct(user.getId(), productId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("canReview", hasPurchased && !hasReviewed);
+            response.put("hasPurchased", hasPurchased);
+            response.put("hasReviewed", hasReviewed);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of("success", true, "canReview", false));
         }
     }
 

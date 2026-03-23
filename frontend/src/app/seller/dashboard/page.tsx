@@ -33,12 +33,12 @@ export default function SellerDashboard() {
           api.get('/dashboard/summary'),
         ]);
         setProfile(profileRes.data);
-        const d = dashRes.data.data?.stats || {};
+        const d = dashRes.data.stats || dashRes.data.data?.stats || {};
         setStats({
-          totalProducts: d['Total Products'] || 0,
-          pendingOrders: d['Pending Orders'] || 0,
-          totalRevenue: d['Total Revenue'] || 0,
-          totalOrders: d['Total Orders'] || 0,
+          totalProducts: d['Total Products'] || d['totalProducts'] || 0,
+          pendingOrders: d['Pending Orders'] || d['pendingOrders'] || 0,
+          totalRevenue: d['Total Revenue'] || d['totalRevenue'] || 0,
+          totalOrders: d['Total Orders'] || d['totalOrders'] || 0,
         });
       } catch (e) {
         console.error(e);

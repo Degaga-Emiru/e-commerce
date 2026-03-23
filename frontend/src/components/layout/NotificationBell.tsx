@@ -85,6 +85,9 @@ export default function NotificationBell() {
               </div>
             ))}
           </div>
+          <a href="/notifications" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', color: '#6366f1', fontSize: 13, fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none' }}>
+            View All Notifications
+          </a>
         </div>
       )}
     </div>

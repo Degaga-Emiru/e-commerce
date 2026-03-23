@@ -20,8 +20,8 @@ export default function SellerProductsPage() {
   const fetchAll = async () => {
     try {
       const [pRes, cRes] = await Promise.all([api.get('/seller/products'), api.get('/categories')]);
-      setProducts(pRes.data);
-      setCategories(cRes.data?.data || cRes.data || []);
+      setProducts(pRes.data || []);
+      setCategories(cRes.data?.categories || cRes.data?.data || cRes.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -30,11 +30,35 @@ export default function SellerProductsPage() {
   const submit = async () => {
     if (!form.name || !form.price) return toast.error('Name and price required');
     try {
-      const payload = { ...form, price: parseFloat(form.price), stockQuantity: parseInt(form.stockQuantity || '0'), categoryId: form.categoryId ? parseInt(form.categoryId) : null };
-      if (editId) { await api.put(`/products/${editId}`, payload); toast.success('Product updated'); }
-      else { await api.post('/products', payload); toast.success('Product created!'); }
+      const payload = { 
+        ...form, 
+        price: parseFloat(form.price), 
+        stockQuantity: parseInt(form.stockQuantity || '0'), 
+        categoryId: form.categoryId ? parseInt(form.categoryId) : null 
+      };
+
+      const formData = new FormData();
+      formData.append('productData', JSON.stringify(payload));
+      // No file input in current UI, so we just send the JSON part
+
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+
+      if (editId) { 
+        await api.put(`/products/${editId}`, formData, config); 
+        toast.success('Product updated'); 
+      }
+      else { 
+        await api.post('/products', formData, config); 
+        toast.success('Product created!'); 
+      }
       setForm(EMPTY); setEditId(null); setShowForm(false); fetchAll();
-    } catch (e: any) { toast.error(e.response?.data?.message || 'Failed'); }
+    } catch (e: any) { 
+      toast.error(e.response?.data?.message || 'Failed to submit product'); 
+    }
   };
 
   const del = async (id: number) => {
@@ -63,10 +87,18 @@ export default function SellerProductsPage() {
           <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 20, padding: '1.5rem', marginBottom: '2rem' }}>
             <h3 style={{ margin: '0 0 1rem', color: '#a5b4fc', fontWeight: 700 }}>{editId ? '✏️ Edit Product' : '➕ New Product'}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              {[['name', 'Name *'], ['price', 'Price (ETB) *'], ['stockQuantity', 'Stock Quantity'], ['imageUrl', 'Image URL']].map(([k, l]) => (
+              {[['name', 'Name *'], ['price', 'Price (ETB) *'], ['stockQuantity', 'Stock Quantity'], ['imageUrl', 'Image URL (Direct link)']].map(([k, l]) => (
                 <div key={k}>
                   <label style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>{l}</label>
-                  <input style={inp} value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} type={k === 'price'||k==='stockQuantity' ? 'number' : 'text'} />
+                  <input style={inp} value={(form as any)[k]} onChange={e => setForm(p => ({ ...p, [k]: e.target.value }))} type={k === 'price'||k==='stockQuantity' ? 'number' : 'text'} placeholder={k === 'imageUrl' ? 'https://example.com/image.jpg' : ''} />
+                  {k === 'imageUrl' && form.imageUrl && (
+                    <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <img src={form.imageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => (e.currentTarget.style.display='none')} />
+                      </div>
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>Preview (Must be a direct image link)</span>
+                    </div>
+                  )}
                 </div>
               ))}
               <div style={{ gridColumn: 'span 2' }}>

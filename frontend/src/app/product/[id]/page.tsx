@@ -2,124 +2,178 @@
 
 import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Minus, Plus } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Minus, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useParams } from 'next/navigation';
+import api from '@/services/api';
+import ProductReviews from '@/components/product/ProductReviews';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [canReview, setCanReview] = useState(false);
 
   useEffect(() => {
-    // Mock fetch product details
-    setProduct({
-      id: Number(id),
-      title: 'Premium Wireless Headphones',
-      price: 199.99,
-      description: 'Experience high-fidelity audio with these premium wireless headphones. Featuring active noise cancellation, 40-hour battery life, and ultra-comfortable memory foam ear cushions.',
-      category: 'Electronics',
-      rating: 4.8,
-      reviews: 124,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
-      specs: [
-        { name: 'Bluetooth', value: '5.0' },
-        { name: 'Battery', value: '40 Hours' },
-        { name: 'Weight', value: '250g' },
-        { name: 'Colors', value: 'Space Gray, Silver, Black' }
-      ]
-    });
-  }, [id]);
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/products/${id}`);
+        setProduct(res.data.product || res.data.data || res.data);
+        
+        if (isAuthenticated) {
+          try {
+            const reviewCheck = await api.get(`/reviews/check?productId=${id}`);
+            setCanReview(reviewCheck.data.canReview);
+          } catch (e) {
+            console.warn('Could not check review eligibility');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+        toast.error('Could not load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchProduct();
+  }, [id, isAuthenticated]);
 
   const handleAddToCart = () => {
+    if (!product) return;
     addToCart({
       productId: product.id,
-      name: product.title,
+      name: product.name || product.title,
       price: product.price,
       quantity: quantity,
-      image: product.image
+      image: product.imageUrl || product.image
     });
     toast.success(`${quantity} item(s) added to cart!`);
   };
 
-  if (!product) return <div className="p-20 text-center">Loading product...</div>;
+  if (loading) return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <Loader2 className="animate-spin text-orange-500" size={48} />
+    </div>
+  );
+
+  if (!product) return <div className="p-20 text-center text-xl font-bold text-gray-400">Product not found</div>;
+
+  const displayPrice = product.price?.toLocaleString() || '0.00';
+  const displayImage = product.imageUrl || product.image || 'https://via.placeholder.com/800';
 
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Gallery */}
         <div className="lg:w-1/2">
-          <div className="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
-            <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+          <div className="aspect-square rounded-[3rem] overflow-hidden bg-white border border-gray-100 shadow-2xl shadow-orange-500/5">
+            <img src={displayImage} alt={product.name} className="w-full h-full object-cover" />
           </div>
         </div>
 
         {/* Info */}
         <div className="lg:w-1/2 space-y-8">
           <div>
-            <span className="text-orange-500 font-bold uppercase tracking-wider text-sm">{product.category}</span>
-            <h1 className="text-4xl font-bold mt-2 text-gray-900">{product.title}</h1>
-            <div className="flex items-center space-x-4 mt-4">
-              <div className="flex items-center text-orange-500">
-                <Star size={18} className="fill-orange-500" />
-                <span className="ml-1 font-bold">{product.rating}</span>
+            <span className="text-orange-500 font-black uppercase tracking-[0.2em] text-xs">
+              {product.category?.name || 'Premium Selection'}
+            </span>
+            <h1 className="text-5xl font-black mt-4 text-gray-900 tracking-tight leading-tight">
+              {product.name}
+            </h1>
+            <div className="flex items-center space-x-6 mt-6">
+              <div className="flex items-center gap-2 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100">
+                <Star size={18} className="fill-orange-500 text-orange-500" />
+                <span className="font-black text-orange-700">{product.averageRating?.toFixed(1) || '0.0'}</span>
               </div>
-              <span className="text-gray-400">({product.reviews} reviews)</span>
+              <span className="text-gray-400 font-bold text-sm uppercase tracking-widest bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
+                {product.reviewCount || 0} reviews
+              </span>
             </div>
           </div>
 
-          <div className="text-3xl font-bold text-orange-600">${product.price.toFixed(2)}</div>
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-baseline space-x-2">
+              <span className="text-gray-400 font-bold text-xl tracking-tighter">ETB</span>
+              <span className="text-6xl font-black text-gray-900 tracking-tighter">{displayPrice}</span>
+            </div>
+            {quantity > 1 && (
+              <div className="flex items-center space-x-2 text-orange-600 font-bold">
+                <span>Subtotal:</span>
+                <span>ETB {((product.price || 0) * quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+            )}
+          </div>
 
-          <p className="text-gray-600 leading-relaxed text-lg">
+          <p className="text-gray-500 leading-relaxed text-lg font-medium">
             {product.description}
           </p>
 
-          <div className="space-y-4 pt-4 border-t border-gray-100">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center border border-gray-300 rounded-md">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-3 hover:text-orange-500"><Minus size={18} /></button>
-                <span className="px-6 font-bold text-lg">{quantity}</span>
-                <button onClick={() => setQuantity(quantity + 1)} className="p-3 hover:text-orange-500"><Plus size={18} /></button>
+          <div className="space-y-4 pt-8 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="flex items-center bg-gray-50 rounded-2xl border border-gray-100 p-1 shadow-inner">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:bg-white rounded-xl transition-all"><Minus size={18} /></button>
+                <span className="w-12 text-center font-black text-xl text-gray-900">{quantity}</span>
+                <button onClick={() => setQuantity(quantity + 1)} className="w-12 h-12 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:bg-white rounded-xl transition-all"><Plus size={18} /></button>
               </div>
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 bg-orange-500 text-white py-4 rounded-md font-bold flex items-center justify-center space-x-3 hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30"
+                className="flex-1 w-full bg-orange-500 text-white py-5 rounded-[1.5rem] font-black text-xl flex items-center justify-center space-x-4 hover:bg-orange-600 transition-all shadow-2xl shadow-orange-500/30 active:scale-[0.98]"
               >
-                <ShoppingCart size={20} />
+                <ShoppingCart size={24} />
                 <span>Add to Cart</span>
               </button>
             </div>
           </div>
 
           {/* Benefits */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
-              <Truck size={20} className="text-orange-500" />
-              <span>Free Global Shipping</span>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10">
+            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center">
+              <Truck size={24} className="text-orange-500 mb-3" />
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Shipping</span>
+              <span className="text-xs font-bold text-gray-900">Free Global</span>
             </div>
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
-              <ShieldCheck size={20} className="text-orange-500" />
-              <span>2 Year Warranty</span>
+            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center">
+              <ShieldCheck size={24} className="text-orange-500 mb-3" />
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Warranty</span>
+              <span className="text-xs font-bold text-gray-900">2 Years</span>
             </div>
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
-              <RefreshCw size={20} className="text-orange-500" />
-              <span>30 Days Returns</span>
+            <div className="flex flex-col items-center p-4 bg-gray-50 rounded-3xl border border-gray-100 text-center">
+              <RefreshCw size={24} className="text-orange-500 mb-3" />
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Returns</span>
+              <span className="text-xs font-bold text-gray-900">30 Days</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Specifications */}
-      <div className="mt-20">
-        <h2 className="text-2xl font-bold mb-8">Technical Specifications</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-          {product.specs && product.specs.map((spec: any) => (
-            <div key={spec.name} className="flex justify-between py-4 border-b border-gray-100">
-              <span className="text-gray-500 font-medium">{spec.name}</span>
-              <span className="text-gray-900 font-semibold">{spec.value}</span>
+      <div className="mt-24 grid grid-cols-1 lg:grid-cols-2 gap-20">
+        {/* Specifications */}
+        <div className="space-y-12">
+            <h2 className="text-4xl font-black text-gray-900 tracking-tight">Technical Specs</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {[
+                { name: 'Stock Status', value: product.stockQuantity > 0 ? 'In Stock' : 'Out of Stock' },
+                { name: 'SKU', value: `EST-${product.id}00${product.name?.length || 0}` },
+                { name: 'Brand', value: product.seller?.shopName || 'E-Store Premium' },
+                { name: 'Category', value: product.category?.name || 'General' },
+              ].map((spec) => (
+                <div key={spec.name} className="flex justify-between items-center py-5 border-b border-gray-100">
+                  <span className="text-gray-400 font-bold uppercase text-xs tracking-widest">{spec.name}</span>
+                  <span className="text-gray-900 font-extrabold">{spec.value}</span>
+                </div>
+              ))}
             </div>
-          ))}
+        </div>
+
+        {/* Reviews */}
+        <div className="bg-gray-50/50 p-12 rounded-[4rem] border border-gray-100">
+           <ProductReviews productId={product.id} canReview={canReview} />
         </div>
       </div>
     </div>

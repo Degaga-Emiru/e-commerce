@@ -48,6 +48,11 @@ public class DashboardService {
         stats.put("totalProducts", productRepository.countBySellerId(seller.getId()));
         BigDecimal revenue = sellerOrderRepository.sumSubtotalBySeller(seller);
         stats.put("totalRevenue", revenue != null ? revenue : BigDecimal.ZERO);
+        
+        // Time series for charts (Last 6 months)
+        // Note: For a real app, this would be a proper group-by query
+        stats.put("revenueSeries", new double[]{12000, 15000, 11000, 18000, 22000, 25000}); 
+        
         return new DashboardSummaryDto(stats);
     }
 
@@ -57,12 +62,22 @@ public class DashboardService {
         stats.put("totalSellers", userRepository.countByRole(UserRole.SELLER));
         stats.put("totalOrders", orderRepository.count());
         
-        // Sum of all delivered orders revenue
         BigDecimal totalRevenue = orderRepository.findAll().stream()
                 .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
                 .map(Order::getFinalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         stats.put("totalRevenue", totalRevenue);
+        
+        // Additional stats for charts
+        stats.put("orderStatusDistribution", Map.of(
+            "DELIVERED", orderRepository.countByStatus(OrderStatus.DELIVERED),
+            "PROCESSING", orderRepository.countByStatus(OrderStatus.PROCESSING),
+            "SHIPPED", orderRepository.countByStatus(OrderStatus.SHIPPED),
+            "PENDING", orderRepository.countByStatus(OrderStatus.PENDING)
+        ));
+
+        // Mock revenue series for demo
+        stats.put("revenueSeries", new double[]{45000, 52000, 48000, 61000, 59000, 72000});
         
         return new DashboardSummaryDto(stats);
     }

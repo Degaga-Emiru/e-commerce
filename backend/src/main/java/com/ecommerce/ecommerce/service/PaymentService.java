@@ -94,7 +94,7 @@ public class PaymentService {
         response.setStatus(payment.getStatus().name());
         response.setMessage(message);
         response.setAmount(payment.getAmount());
-        response.setCommission(payment.getStatus() == PaymentStatus.COMPLETED || payment.getStatus() == PaymentStatus.SUCCESS
+        response.setCommission(payment.getStatus() == PaymentStatus.COMPLETED
                 ? payment.getAmount().multiply(new BigDecimal("0.10"))
                 : BigDecimal.ZERO);
         response.setPaymentDate(payment.getPaymentDate());

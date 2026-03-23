@@ -22,9 +22,10 @@ export default function ProductReviews({ productId, canReview }: Props) {
 
   const fetchReviews = () => {
     api.get(`/reviews/product/${productId}`).then(r => {
-      const data: Review[] = r.data?.data || r.data || [];
-      setReviews(data);
-      if (data.length > 0) setAvgRating(data.reduce((a, r) => a + r.rating, 0) / data.length);
+      const data = r.data?.reviews || r.data?.data || r.data;
+      const reviewArray = Array.isArray(data) ? data : [];
+      setReviews(reviewArray);
+      if (reviewArray.length > 0) setAvgRating(reviewArray.reduce((a, r: any) => a + r.rating, 0) / reviewArray.length);
     }).catch(console.error);
   };
   useEffect(() => { fetchReviews(); }, [productId]);

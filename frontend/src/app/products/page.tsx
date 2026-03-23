@@ -42,7 +42,8 @@ const ProductsPage = () => {
   }, []);
 
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const title = p.name || p.title || '';
+    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase());
     const catName = typeof p.category === 'string' ? p.category : p.category?.name;
     const matchesCategory = selectedCategory === 'All' || catName === selectedCategory;
     return matchesSearch && matchesCategory;

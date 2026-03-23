@@ -6,6 +6,7 @@ import com.ecommerce.ecommerce.mapper.OrderMapper;
 import com.ecommerce.ecommerce.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.ecommerce.ecommerce.dto.ApiResponse;
 import com.ecommerce.ecommerce.dto.OrderDto;
@@ -56,6 +57,19 @@ public class OrderController {
         return ResponseEntity.ok(new ApiResponse(true, "Order created successfully", orderDto));
     }
 
+    @GetMapping("/my-orders")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyOrders() {
+        try {
+            String email = SecurityContextHolder.getContext().getAuthentication().getName();
+            List<Order> orders = orderService.getUserOrdersByEmail(email);
+            List<OrderDto> dtos = orders.stream().map(OrderMapper::toDto).toList();
+            return ResponseEntity.ok(new ApiResponse(true, "Orders retrieved successfully", dtos));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('CUSTOMER') or hasRole('ADMIN') or hasRole('SELLER')")
     public ResponseEntity<?> getOrderById(@PathVariable Long orderId) {
@@ -63,6 +77,18 @@ public class OrderController {
             Order order = orderService.getOrderById(orderId);
             OrderDto orderDto = OrderMapper.toDto(order);
 
+            return ResponseEntity.ok(new ApiResponse(true, "Order retrieved successfully", orderDto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/number/{orderNumber}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getOrderByNumber(@PathVariable String orderNumber) {
+        try {
+            Order order = orderService.getOrderByNumber(orderNumber);
+            OrderDto orderDto = OrderMapper.toDto(order);
             return ResponseEntity.ok(new ApiResponse(true, "Order retrieved successfully", orderDto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));

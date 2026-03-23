@@ -14,7 +14,13 @@ export default function SellerOrdersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/seller/orders').then(r => setOrders(r.data || [])).catch(console.error).finally(() => setLoading(false));
+    api.get('/seller/orders')
+      .then(r => {
+        const data = r.data?.orders || r.data?.data || r.data;
+        setOrders(Array.isArray(data) ? data : []);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   const updateShipping = async (orderId: number, status: string) => {

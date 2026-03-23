@@ -131,26 +131,8 @@ public class ReviewService {
     public boolean hasUserReviewedProduct(Long userId, Long productId) {
         return reviewRepository.findByUserIdAndProductId(userId, productId).isPresent();
     }
-    // In your ReviewService class
-    public ReviewDto convertToDto(Review review) {
-        ReviewDto dto = new ReviewDto();
-        dto.setId(review.getId());
-        dto.setUserId(review.getUser().getId());
-        dto.setUserName(review.getUser().getFirstName() + " " + review.getUser().getLastName());
-        dto.setProductId(review.getProduct().getId());
-        dto.setProductName(review.getProduct().getName());
-        dto.setOrderId(review.getOrder() != null ? review.getOrder().getId() : null);
-        dto.setRating(review.getRating());
-        dto.setComment(review.getComment());
-        dto.setCreatedAt(review.getCreatedAt());
-        dto.setUpdatedAt(review.getUpdatedAt());
-        dto.setVerifiedPurchase(review.getVerifiedPurchase());
-        dto.setHelpfulVotes(review.getHelpfulVotes());
-        dto.setTotalVotes(review.getTotalVotes());
-        dto.setHelpfulPercentage(review.getHelpfulPercentage());
-        dto.setRatingStars(review.getRatingStars());
-        dto.setCanEdit(review.canEditReview());
 
-        return dto;
+    public boolean hasUserPurchasedProduct(Long userId, Long productId) {
+        return orderRepository.hasPurchasedProduct(userId, productId);
     }
 }
