@@ -5,6 +5,8 @@ import com.ecommerce.ecommerce.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @Transactional
 public class ShippingService {
@@ -12,17 +14,33 @@ public class ShippingService {
     private final ShippingRepository shippingRepository;
     private final OrderRepository orderRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
+    private final EscrowService escrowService;
+    private final ShippingHistoryService shippingHistoryService;
 
-    public ShippingService(ShippingRepository shippingRepository, OrderRepository orderRepository,
-                           NotificationService notificationService) {
+    public ShippingService(ShippingRepository shippingRepository, 
+                           OrderRepository orderRepository,
+                           NotificationService notificationService,
+                           EmailService emailService,
+                           EscrowService escrowService,
+                           ShippingHistoryService shippingHistoryService) {
         this.shippingRepository = shippingRepository;
         this.orderRepository = orderRepository;
         this.notificationService = notificationService;
+        this.emailService = emailService;
+        this.escrowService = escrowService;
+        this.shippingHistoryService = shippingHistoryService;
     }
 
     public Shipping createShipping(Order order) {
         Shipping shipping = new Shipping(order);
-        return shippingRepository.save(shipping);
+        shipping.setStatus(ShippingStatus.PENDING);
+        Shipping saved = shippingRepository.save(shipping);
+        
+        // Log initial state
+        shippingHistoryService.logHistory(saved, ShippingStatus.PENDING, "SYSTEM", "Shipping record created.");
+        
+        return saved;
     }
 
     public Shipping getShippingByOrderId(Long orderId) {
@@ -30,7 +48,8 @@ public class ShippingService {
                 .orElseThrow(() -> new RuntimeException("Shipping record not found for order: " + orderId));
     }
 
-    public Shipping updateShippingStatus(Long orderId, ShippingStatus newStatus, String carrier, String trackingNumber) {
+    @Transactional
+    public Shipping updateShippingStatus(Long orderId, ShippingStatus newStatus, String carrier, String trackingNumber, String note, String updatedBy) {
         Shipping shipping = shippingRepository.findByOrderId(orderId)
                 .orElseGet(() -> {
                     Order order = orderRepository.findById(orderId)
@@ -38,41 +57,67 @@ public class ShippingService {
                     return new Shipping(order);
                 });
 
+        ShippingStatus oldStatus = shipping.getStatus();
+        if (oldStatus == newStatus) return shipping;
+
         shipping.setStatus(newStatus);
         if (carrier != null) shipping.setCarrier(carrier);
         if (trackingNumber != null) shipping.setTrackingNumber(trackingNumber);
+        shipping.setUpdatedAt(LocalDateTime.now());
 
         Shipping saved = shippingRepository.save(shipping);
 
-        // Update order status and notify user
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+        // Log History
+        shippingHistoryService.logHistory(saved, newStatus, updatedBy, note);
 
-        String notifTitle, notifMessage;
+        // Update Order status
+        Order order = shipping.getOrder();
+        
+        String notifType = "SHIPPING";
+        String userName = order.getUser().getFirstName();
+        String orderNo = order.getOrderNumber();
+        String userEmail = order.getUser().getEmail();
+
         switch (newStatus) {
+            case PROCESSING:
+                order.setStatus(OrderStatus.PROCESSING);
+                notificationService.createNotification(order.getUser(), "Processing Order 📦", "Your order #" + orderNo + " is being processed.", notifType);
+                break;
             case SHIPPED:
                 order.setStatus(OrderStatus.SHIPPED);
-                notifTitle = "Your order has shipped!";
-                notifMessage = "Order #" + order.getOrderNumber() + " is on its way." +
-                        (trackingNumber != null ? " Tracking: " + trackingNumber : "");
+                order.setShippedDate(LocalDateTime.now());
+                notificationService.createNotification(order.getUser(), "Order Shipped 🚚", "Your order #" + orderNo + " has been shipped!", notifType);
+                emailService.sendShippingUpdate(userEmail, userName, orderNo, "SHIPPED", saved.getTrackingNumber(), "3-5 business days");
                 break;
             case OUT_FOR_DELIVERY:
-                notifTitle = "Out for delivery!";
-                notifMessage = "Order #" + order.getOrderNumber() + " is out for delivery today.";
+                notificationService.createNotification(order.getUser(), "Out for Delivery 🛵", "Your order #" + orderNo + " is out for delivery!", notifType);
+                emailService.sendOutForDelivery(userEmail, userName, orderNo);
                 break;
             case DELIVERED:
                 order.setStatus(OrderStatus.DELIVERED);
-                notifTitle = "Order Delivered!";
-                notifMessage = "Order #" + order.getOrderNumber() + " has been delivered. Please confirm receipt and leave a review.";
+                order.setDeliveredDate(LocalDateTime.now());
+                notificationService.createNotification(order.getUser(), "Order Delivered ✅", "Your order #" + orderNo + " has been delivered!", notifType);
+                emailService.sendOrderDelivered(userEmail, userName, orderNo);
+                
+                // TRIGGER ESCROW RELEASE
+                escrowService.releaseEscrow(orderId);
+                break;
+            case CANCELLED:
+                order.setStatus(OrderStatus.CANCELLED);
+                notificationService.createNotification(order.getUser(), "Order Cancelled ❌", "Your order #" + orderNo + " has been cancelled.", notifType);
+                
+                // TRIGGER ESCROW REFUND
+                escrowService.refundEscrow(orderId);
                 break;
             default:
-                notifTitle = "Order Update";
-                notifMessage = "Your order #" + order.getOrderNumber() + " status: " + newStatus;
+                break;
         }
 
         orderRepository.save(order);
-        notificationService.sendNotification(order.getUser().getId(), notifTitle, notifMessage, "SHIPPING", orderId);
-
         return saved;
+    }
+
+    public Object getShippingHistory(Long shippingId) {
+        return shippingHistoryService.getTrackingHistory(shippingId);
     }
 }

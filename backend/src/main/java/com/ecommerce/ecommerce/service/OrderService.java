@@ -26,6 +26,8 @@ public class OrderService {
     private SellerOrderRepository sellerOrderRepository;
     private final DemoBankService demoBankService;
     private final PaymentRepository paymentRepository;
+    private final ShippingService shippingService;
+    private final EscrowService escrowService;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
@@ -33,7 +35,8 @@ public class OrderService {
                         DiscountCouponRepository couponRepository, EmailService emailService,
                         CartRepository cartRepository, CartItemRepository cartItemRepository,
                         SellerOrderRepository sellerOrderRepository, DemoBankService demoBankService,
-                        PaymentRepository paymentRepository) {
+                        PaymentRepository paymentRepository, ShippingService shippingService,
+                        EscrowService escrowService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -45,6 +48,8 @@ public class OrderService {
         this.sellerOrderRepository = sellerOrderRepository;
         this.demoBankService = demoBankService;
         this.paymentRepository = paymentRepository;
+        this.shippingService = shippingService;
+        this.escrowService = escrowService;
     }
     @Transactional
     public Order createOrder(Long userId, List<OrderItem> orderItems,
@@ -78,7 +83,7 @@ public class OrderService {
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
 
         BigDecimal totalAmount = BigDecimal.ZERO;
-        Map<User, List<OrderItem>> sellerOrderMap = new HashMap<>();
+        Map<Long, List<OrderItem>> sellerOrderMap = new HashMap<>();
 
         // 3️⃣ Validate & prepare order items
         List<OrderItem> preparedItems = new ArrayList<>();
@@ -123,7 +128,7 @@ public class OrderService {
                 productRepository.save(product);
                 System.out.println("⚠️ Warning: Product " + product.getId() + " was missing a seller. Assigned Admin as fallback.");
             }
-            sellerOrderMap.computeIfAbsent(seller, s -> new ArrayList<>()).add(newItem);
+            sellerOrderMap.computeIfAbsent(seller.getId(), s -> new ArrayList<>()).add(newItem);
 
             // Update stock
             updateProductStock(product.getId(), item.getQuantity());
@@ -138,11 +143,13 @@ public class OrderService {
         order.setFinalAmount(totalAmount.add(order.getShippingAmount()));
 
         // Save main order
+        order.setOrderItems(preparedItems); // Ensure the list is set
         Order savedOrder = orderRepository.save(order);
 
         // 5️⃣ Create SellerOrders per seller
-        for (Map.Entry<User, List<OrderItem>> entry : sellerOrderMap.entrySet()) {
-            User seller = entry.getKey();
+        for (Map.Entry<Long, List<OrderItem>> entry : sellerOrderMap.entrySet()) {
+            Long sellerId = entry.getKey();
+            User seller = userRepository.findById(sellerId).orElseThrow();
             List<OrderItem> sellerItems = entry.getValue();
 
             SellerOrder sellerOrder = new SellerOrder();
@@ -188,6 +195,10 @@ public class OrderService {
                 savedOrder.getFinalAmount().doubleValue(),
                 null
         );
+        
+        // 9️⃣ Initialize Shipping and Escrow
+        shippingService.createShipping(savedOrder);
+        escrowService.createEscrow(savedOrder);
 
         return savedOrder;
     }
@@ -251,7 +262,26 @@ public class OrderService {
         }
 
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        // Update Shipping Status accordingly
+        ShippingStatus shippingStatus = mapOrderStatusToShippingStatus(newStatus);
+        if (shippingStatus != null) {
+            shippingService.updateShippingStatus(orderId, shippingStatus, null, null, "Order status updated to " + newStatus, "SYSTEM");
+        }
+
+        return savedOrder;
+    }
+
+    private ShippingStatus mapOrderStatusToShippingStatus(OrderStatus orderStatus) {
+        return switch (orderStatus) {
+            case PENDING -> ShippingStatus.PENDING;
+            case PROCESSING -> ShippingStatus.PROCESSING;
+            case SHIPPED -> ShippingStatus.SHIPPED;
+            case DELIVERED -> ShippingStatus.DELIVERED;
+            case CANCELLED -> ShippingStatus.CANCELLED;
+            default -> null;
+        };
     }
 
     public Order cancelOrder(Long orderId) {
@@ -404,4 +434,7 @@ public class OrderService {
         return orderRepository.findOrdersBySellerId(sellerId);
     }
 
+    public List<Order> getAllOrders() {
+        return orderRepository.findAllByOrderByOrderDateDesc();
+    }
 }

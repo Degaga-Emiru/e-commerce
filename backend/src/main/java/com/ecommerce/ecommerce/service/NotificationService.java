@@ -3,63 +3,53 @@ package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.entity.Notification;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.repository.NotificationRepository;
-import com.ecommerce.ecommerce.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-@Transactional
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository, EmailService emailService) {
         this.notificationRepository = notificationRepository;
-        this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
-    public void sendNotification(Long userId, String title, String message, String type) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+    @Transactional
+    public void createNotification(User user, String title, String message, String type) {
         Notification notification = new Notification(user, title, message, type);
         notificationRepository.save(notification);
-    }
-
-    public void sendNotification(Long userId, String title, String message, String type, Long relatedId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-        Notification notification = new Notification(user, title, message, type, relatedId);
-        notificationRepository.save(notification);
+        
+        // Also send email as a backup/secondary notification
+        emailService.sendSimpleEmail(user.getEmail(), title, message);
     }
 
     public List<Notification> getUserNotifications(Long userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
-    public List<Notification> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+    public Long getUnreadCount(Long userId) {
+        return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
-    public long getUnreadCount(Long userId) {
-        return notificationRepository.countUnreadByUserId(userId);
+    @Transactional
+    public void markAsRead(Long notificationId) {
+        notificationRepository.findById(notificationId).ifPresent(n -> {
+            n.setIsRead(true);
+            notificationRepository.save(n);
+        });
     }
 
-    public void markAsRead(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
-        if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
-        }
-        notification.setIsRead(true);
-        notificationRepository.save(notification);
-    }
-
+    @Transactional
     public void markAllAsRead(Long userId) {
-        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-        unread.forEach(n -> n.setIsRead(true));
+        List<Notification> unread = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        unread.forEach(n -> {
+            if (!n.getIsRead()) n.setIsRead(true);
+        });
         notificationRepository.saveAll(unread);
     }
 }

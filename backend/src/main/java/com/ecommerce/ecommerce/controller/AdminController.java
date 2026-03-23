@@ -2,13 +2,11 @@ package com.ecommerce.ecommerce.controller;
 
 import com.ecommerce.ecommerce.dto.ApiResponse;
 import com.ecommerce.ecommerce.entity.DiscountCoupon;
-import com.ecommerce.ecommerce.entity.DiscountType;
 import com.ecommerce.ecommerce.service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,18 +22,38 @@ public class AdminController {
     private final PaymentService paymentService;
     private final DiscountService discountService;
     private final EmailService emailService;
+    private final SellerService sellerService;
 
     public AdminController(UserService userService,
                            OrderService orderService,
                            PaymentService paymentService,
                            DiscountService discountService,
-     EmailService emailService) {
+                           EmailService emailService,
+                           SellerService sellerService) {
         this.userService = userService;
         this.orderService = orderService;
         this.paymentService = paymentService;
         this.discountService = discountService;
-        this.emailService = emailService; // inject it here
+        this.emailService = emailService;
+        this.sellerService = sellerService;
+    }
 
+    @GetMapping("/orders")
+    public ResponseEntity<?> getAllOrders() {
+        try {
+            return ResponseEntity.ok(new ApiResponse(true, "All orders retrieved", orderService.getAllOrders()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/sellers")
+    public ResponseEntity<?> getAllSellers() {
+        try {
+            return ResponseEntity.ok(new ApiResponse(true, "All sellers retrieved", sellerService.getAllSellers()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
     }
 
     // ---------------- Dashboard ----------------
@@ -44,15 +62,10 @@ public class AdminController {
         try {
             Map<String, Object> stats = new HashMap<>();
             stats.put("totalUsers", userService.getAllUsers().size());
-            stats.put("newUsersToday", 5); // replace with real logic
-            stats.put("totalOrders", 150);
+            stats.put("newUsersToday", 5); 
+            stats.put("totalOrders", orderService.getAllOrders().size());
             stats.put("pendingOrders", 12);
             stats.put("completedOrders", 125);
-
-//            BigDecimal revenue = paymentService.getTotalRevenue(
-//                    LocalDateTime.now().minusDays(30), LocalDateTime.now());
-//            stats.put("revenueLast30Days", revenue);
-//            stats.put("averageOrderValue", 89.99);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -109,7 +122,7 @@ public class AdminController {
         try {
             DiscountCoupon savedCoupon = discountService.createCoupon(
                     couponRequest.getCode(),
-                    couponRequest.getName(),          // <-- add name here
+                    couponRequest.getName(),
                     couponRequest.getDiscountType(),
                     couponRequest.getDiscountValue(),
                     couponRequest.getExpiryDate(),

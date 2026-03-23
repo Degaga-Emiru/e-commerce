@@ -1,10 +1,12 @@
 package com.ecommerce.ecommerce.controller;
 
 import com.ecommerce.ecommerce.entity.Notification;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.repository.UserRepository;
 import com.ecommerce.ecommerce.service.NotificationService;
-import com.ecommerce.ecommerce.service.UserService;
 import com.ecommerce.ecommerce.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,42 +18,42 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserService userService;
+    private final UserRepository userRepository;
 
-    public NotificationController(NotificationService notificationService, UserService userService) {
+    public NotificationController(NotificationService notificationService, UserRepository userRepository) {
         this.notificationService = notificationService;
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
-    public ResponseEntity<List<Notification>> getNotifications() {
-        Long userId = userService.getUserIdByEmail(SecurityUtils.getCurrentUserEmail());
-        return ResponseEntity.ok(notificationService.getUserNotifications(userId));
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Notification>> getMyNotifications() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email).orElseThrow();
+        return ResponseEntity.ok(notificationService.getUserNotifications(user.getId()));
     }
 
-    @GetMapping("/unread")
-    public ResponseEntity<List<Notification>> getUnread() {
-        Long userId = userService.getUserIdByEmail(SecurityUtils.getCurrentUserEmail());
-        return ResponseEntity.ok(notificationService.getUnreadNotifications(userId));
-    }
-
-    @GetMapping("/count")
+    @GetMapping("/unread-count")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Long>> getUnreadCount() {
-        Long userId = userService.getUserIdByEmail(SecurityUtils.getCurrentUserEmail());
-        return ResponseEntity.ok(Map.of("unreadCount", notificationService.getUnreadCount(userId)));
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email).orElseThrow();
+        return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(user.getId())));
     }
 
     @PutMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable Long id) {
-        Long userId = userService.getUserIdByEmail(SecurityUtils.getCurrentUserEmail());
-        notificationService.markAsRead(id, userId);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> markAsRead(@PathVariable Long id) {
+        notificationService.markAsRead(id);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("/read-all")
-    public ResponseEntity<Void> markAllAsRead() {
-        Long userId = userService.getUserIdByEmail(SecurityUtils.getCurrentUserEmail());
-        notificationService.markAllAsRead(userId);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> markAllAsRead() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email).orElseThrow();
+        notificationService.markAllAsRead(user.getId());
         return ResponseEntity.ok().build();
     }
 }

@@ -1,10 +1,18 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Bell } from 'lucide-react';
-import api from '@/services/api';
+import { Bell, Package, CreditCard, Info, Check } from 'lucide-react';
+import { notificationApi } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
-interface Notification { id: number; title: string; message: string; type: string; isRead: boolean; createdAt: string; }
+interface Notification { 
+  id: number; 
+  title: string; 
+  message: string; 
+  type: string; 
+  isRead: boolean; 
+  createdAt: string; 
+}
 
 export default function NotificationBell() {
   const { isAuthenticated } = useAuth();
@@ -17,17 +25,22 @@ export default function NotificationBell() {
     if (!isAuthenticated) return;
     try {
       const [notifRes, countRes] = await Promise.all([
-        api.get('/notifications/unread'),
-        api.get('/notifications/count'),
+        notificationApi.getNotifications(),
+        notificationApi.getUnreadCount(),
       ]);
       setNotifications(notifRes.data || []);
-      setUnreadCount(countRes.data?.unreadCount || 0);
-    } catch {}
+      setUnreadCount(countRes.data?.count || 0);
+    } catch (e) {
+        console.error("Failed to fetch notifications", e);
+    }
   };
 
-  useEffect(() => { fetch(); const t = setInterval(fetch, 30000); return () => clearInterval(t); }, [isAuthenticated]);
+  useEffect(() => { 
+    fetch(); 
+    const t = setInterval(fetch, 15000); // 15s polling
+    return () => clearInterval(t); 
+  }, [isAuthenticated]);
 
-  // Close on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener('mousedown', h);
@@ -35,59 +48,77 @@ export default function NotificationBell() {
   }, []);
 
   const markRead = async (id: number) => {
-    try { await api.put(`/notifications/${id}/read`); fetch(); } catch {}
+    try { 
+        await notificationApi.markAsRead(id); 
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        setUnreadCount(p => Math.max(0, p - 1));
+    } catch {}
   };
 
   const markAll = async () => {
-    try { await api.put('/notifications/read-all'); fetch(); } catch {}
+    try { 
+        await notificationApi.markAllAsRead(); 
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+    } catch {}
   };
 
   if (!isAuthenticated) return null;
 
-  const typeColor: Record<string, string> = { SHIPPING: '#06b6d4', PAYMENT: '#10b981', ORDER_UPDATE: '#6366f1', SYSTEM: '#f59e0b' };
+  const getIcon = (type: string) => {
+      switch(type) {
+          case 'SHIPPING': return <Package size={14} color="#06b6d4" />;
+          case 'PAYMENT': return <CreditCard size={14} color="#10b981" />;
+          default: return <Info size={14} color="#6366f1" />;
+      }
+  }
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(p => !p)} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', display: 'flex', alignItems: 'center', color: '#94a3b8' }}>
-        <Bell size={22} />
+      <button onClick={() => setOpen(p => !p)} style={{ position: 'relative', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 12, cursor: 'pointer', padding: '0.6rem', display: 'flex', alignItems: 'center', color: '#475569', transition:'all 0.2s' }}>
+        <Bell size={20} />
         {unreadCount > 0 && (
-          <span style={{ position: 'absolute', top: 0, right: 0, background: '#ef4444', color: '#fff', borderRadius: '100%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>
+          <span style={{ position: 'absolute', top: -4, right: -4, background: '#f97316', color: '#fff', borderRadius: '100%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, border:'2px solid #fff' }}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 360, background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', zIndex: 1000, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-            <h4 style={{ margin: 0, color: '#f1f5f9', fontWeight: 700 }}>Notifications</h4>
+        <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 12px)', width: 340, background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 24, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', zIndex: 1000, overflow: 'hidden', animation: 'fadeIn 0.2s ease-out' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', borderBottom: '1px solid #f1f5f9' }}>
+            <h4 style={{ margin: 0, color: '#1e293b', fontWeight: 800, fontSize:15 }}>Notifications</h4>
             {unreadCount > 0 && (
-              <button onClick={markAll} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>Mark all read</button>
+              <button onClick={markAll} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: 12, cursor: 'pointer', fontWeight: 700, display:'flex', alignItems:'center', gap:4 }}>
+                <Check size={14} /> Clear all
+              </button>
             )}
           </div>
 
-          <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+          <div style={{ maxHeight: 380, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
-              <p style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem', margin: 0 }}>No new notifications</p>
-            ) : notifications.map(n => (
+              <div style={{ textAlign: 'center', padding: '3rem 1.5rem', color: '#94a3b8' }}>
+                <Bell size={32} style={{ opacity: 0.2, marginBottom: 12 }} />
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>No new notifications</p>
+              </div>
+            ) : notifications.slice(0, 10).map(n => (
               <div key={n.id} onClick={() => markRead(n.id)}
-                style={{ padding: '0.875rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', background: n.isRead ? 'transparent' : 'rgba(99,102,241,0.06)', transition: 'background 0.15s' }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = n.isRead ? 'transparent' : 'rgba(99,102,241,0.06)'}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: typeColor[n.type] || '#6366f1', marginTop: 6, flexShrink: 0, opacity: n.isRead ? 0 : 1 }} />
-                  <div>
-                    <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 600, fontSize: 14 }}>{n.title}</p>
-                    <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: 13, lineHeight: 1.4 }}>{n.message}</p>
-                    <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: 11 }}>{new Date(n.createdAt).toLocaleString()}</p>
+                style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #f8fafc', cursor: 'pointer', background: n.isRead ? 'transparent' : 'rgba(99,102,241,0.03)', transition: 'background 0.15s' }}>
+                <div style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start' }}>
+                  <div style={{ padding: 8, borderRadius: 10, background: 'rgba(0,0,0,0.02)', marginTop: 2 }}>{getIcon(n.type)}</div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, color: '#1e293b', fontWeight: 700, fontSize: 13.5 }}>{n.title}</p>
+                    <p style={{ margin: '0.2rem 0 0', color: '#64748b', fontSize: 12.5, lineHeight: 1.5 }}>{n.message}</p>
+                    <p style={{ margin: '0.4rem 0 0', color: '#94a3b8', fontSize: 11, fontWeight: 500 }}>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
+                  {!n.isRead && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', marginTop: 8 }} />}
                 </div>
               </div>
             ))}
           </div>
-          <a href="/notifications" style={{ display: 'block', textAlign: 'center', padding: '0.75rem', color: '#6366f1', fontSize: 13, fontWeight: 700, borderTop: '1px solid rgba(255,255,255,0.08)', textDecoration: 'none' }}>
-            View All Notifications
-          </a>
+          <Link href="/notifications" style={{ display: 'block', textAlign: 'center', padding: '1rem', color: '#1e293b', fontSize: 13, fontWeight: 700, borderTop: '1px solid #f1f5f9', textDecoration: 'none', background:'#f8fafc' }}>
+            View Full Inbox
+          </Link>
         </div>
       )}
     </div>

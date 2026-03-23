@@ -16,6 +16,7 @@ export default function SellerProductsPage() {
   const [editId, setEditId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchAll = async () => {
     try {
@@ -29,6 +30,7 @@ export default function SellerProductsPage() {
 
   const submit = async () => {
     if (!form.name || !form.price) return toast.error('Name and price required');
+    setSubmitting(true);
     try {
       const payload = { 
         ...form, 
@@ -58,6 +60,8 @@ export default function SellerProductsPage() {
       setForm(EMPTY); setEditId(null); setShowForm(false); fetchAll();
     } catch (e: any) { 
       toast.error(e.response?.data?.message || 'Failed to submit product'); 
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -113,8 +117,8 @@ export default function SellerProductsPage() {
                 <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
               </div>
             </div>
-            <button onClick={submit} style={{ marginTop: '1rem', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '0.75rem 2rem', fontWeight: 700, cursor: 'pointer', fontSize: 15 }}>
-              {editId ? 'Update Product' : 'Create Product'}
+            <button onClick={submit} disabled={submitting} style={{ marginTop: '1rem', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '0.75rem 2rem', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 15, opacity: submitting ? 0.7 : 1 }}>
+              {submitting ? 'Processing...' : (editId ? 'Update Product' : 'Create Product')}
             </button>
           </div>
         )}

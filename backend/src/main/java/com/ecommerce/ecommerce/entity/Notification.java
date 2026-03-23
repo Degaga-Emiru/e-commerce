@@ -18,24 +18,21 @@ public class Notification {
     @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
 
     @Column(nullable = false)
-    private String type; // ORDER_UPDATE, PAYMENT, SHIPPING, SYSTEM
+    private String type; // ORDER, SHIPPING, PAYMENT
 
     @Column(name = "is_read", nullable = false)
-    private Boolean isRead = false;
+    private boolean isRead = false;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-
-    @Column(name = "related_id")
-    private Long relatedId; // order id, product id etc.
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
     public Notification() {}
@@ -45,13 +42,11 @@ public class Notification {
         this.title = title;
         this.message = message;
         this.type = type;
+        this.createdAt = LocalDateTime.now();
+        this.isRead = false;
     }
 
-    public Notification(User user, String title, String message, String type, Long relatedId) {
-        this(user, title, message, type);
-        this.relatedId = relatedId;
-    }
-
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
@@ -62,9 +57,8 @@ public class Notification {
     public void setMessage(String message) { this.message = message; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public Boolean getIsRead() { return isRead; }
-    public void setIsRead(Boolean isRead) { this.isRead = isRead; }
+    public boolean getIsRead() { return isRead; }
+    public void setIsRead(boolean read) { isRead = read; }
     public LocalDateTime getCreatedAt() { return createdAt; }
-    public Long getRelatedId() { return relatedId; }
-    public void setRelatedId(Long relatedId) { this.relatedId = relatedId; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    List<Order> findAllByOrderByOrderDateDesc();
     List<Order> findByUserId(Long userId);
     List<Order> findByStatus(OrderStatus status);
     Optional<Order> findByOrderNumber(String orderNumber);
@@ -32,7 +33,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(@Param("status") OrderStatus status);
 
-    @Query("SELECT o FROM Order o JOIN o.orderItems oi WHERE oi.product.seller.id = :sellerId")
+    @Query("SELECT DISTINCT so.order FROM SellerOrder so WHERE so.seller.id = :sellerId ORDER BY so.order.orderDate DESC")
     List<Order> findOrdersBySellerId(@Param("sellerId") Long sellerId);
 
     @Query("SELECT SUM(o.finalAmount) FROM Order o WHERE o.orderDate BETWEEN :startDate AND :endDate AND o.status = 'DELIVERED'")
