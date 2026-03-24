@@ -73,11 +73,12 @@ const CheckoutPage = () => {
           quantity: item.quantity
         })),
         shippingAddress: {
+          addressId: selectedAddr.id,
           recipientName: `${user?.firstName} ${user?.lastName}`,
           street: selectedAddr.street,
           city: selectedAddr.city,
           state: selectedAddr.state,
-          zipCode: selectedAddr.zipCode,
+        zipCode: selectedAddr.zipCode,
           country: selectedAddr.country,
           phoneNumber: selectedAddr.phoneNumber
         }

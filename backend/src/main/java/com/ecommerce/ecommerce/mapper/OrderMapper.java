@@ -34,14 +34,14 @@ public class OrderMapper {
         }
 
         // Shipping Address
-        if (order.getShippingAddress() != null) {
+        if (order.getShippingStreet() != null || order.getShippingAddress() != null) {
             ShippingAddressDto addressDto = new ShippingAddressDto();
-            addressDto.setRecipientName(null); // Address entity has no recipient name
-            addressDto.setStreet(order.getShippingAddress().getStreet());
-            addressDto.setCity(order.getShippingAddress().getCity());
-            addressDto.setState(order.getShippingAddress().getState());
-            addressDto.setZipCode(order.getShippingAddress().getZipCode());
-            addressDto.setCountry(order.getShippingAddress().getCountry());
+            addressDto.setRecipientName(order.getShippingRecipientName());
+            addressDto.setStreet(order.getShippingStreet() != null ? order.getShippingStreet() : order.getShippingAddress().getStreet());
+            addressDto.setCity(order.getShippingCity() != null ? order.getShippingCity() : order.getShippingAddress().getCity());
+            addressDto.setState(order.getShippingState() != null ? order.getShippingState() : order.getShippingAddress().getState());
+            addressDto.setZipCode(order.getShippingZipCode() != null ? order.getShippingZipCode() : order.getShippingAddress().getZipCode());
+            addressDto.setCountry(order.getShippingCountry() != null ? order.getShippingCountry() : order.getShippingAddress().getCountry());
             addressDto.setPhoneNumber(order.getShippingPhoneNumber()); // phone from order entity
             dto.setShippingAddress(addressDto);
         }

@@ -30,6 +30,7 @@ public class OrderService {
     private final ShippingRepository shippingRepository;
     private final EscrowService escrowService;
     private final EscrowRepository escrowRepository;
+    private final AddressRepository addressRepository;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
@@ -39,7 +40,8 @@ public class OrderService {
                         SellerOrderRepository sellerOrderRepository, DemoBankService demoBankService,
                         PaymentRepository paymentRepository, ShippingService shippingService,
                         ShippingRepository shippingRepository,
-                        EscrowService escrowService, EscrowRepository escrowRepository) {
+                        EscrowService escrowService, EscrowRepository escrowRepository,
+                        AddressRepository addressRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -55,6 +57,7 @@ public class OrderService {
         this.shippingRepository = shippingRepository;
         this.escrowService = escrowService;
         this.escrowRepository = escrowRepository;
+        this.addressRepository = addressRepository;
     }
     @Transactional
     public Order createOrder(Long userId, List<OrderItem> orderItems,
@@ -75,16 +78,31 @@ public class OrderService {
         order.setOrderDate(LocalDateTime.now());
         order.setDeliveredDate(LocalDate.now().plusDays(5).atStartOfDay());
 
-        Address shippingAddress = new Address(
-                shippingAddressDto.getStreet(),
-                shippingAddressDto.getCity(),
-                shippingAddressDto.getState(),
-                shippingAddressDto.getZipCode(),
-                shippingAddressDto.getCountry(),
-                shippingAddressDto.getPhoneNumber(),
-                user
-        );
-        order.setShippingAddress(shippingAddress);
+        if (shippingAddressDto.getAddressId() != null) {
+            Address existingAddress = addressRepository.findById(shippingAddressDto.getAddressId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Shipping Address not found"));
+            order.setShippingAddress(existingAddress);
+        } else {
+            Address newAddress = new Address(
+                    shippingAddressDto.getStreet(),
+                    shippingAddressDto.getCity(),
+                    shippingAddressDto.getState(),
+                    shippingAddressDto.getZipCode(),
+                    shippingAddressDto.getCountry(),
+                    shippingAddressDto.getPhoneNumber(),
+                    user
+            );
+            newAddress = addressRepository.save(newAddress);
+            order.setShippingAddress(newAddress);
+        }
+
+        // Snapshot address details directly in Order table
+        order.setShippingRecipientName(shippingAddressDto.getRecipientName());
+        order.setShippingStreet(shippingAddressDto.getStreet());
+        order.setShippingCity(shippingAddressDto.getCity());
+        order.setShippingState(shippingAddressDto.getState());
+        order.setShippingZipCode(shippingAddressDto.getZipCode());
+        order.setShippingCountry(shippingAddressDto.getCountry());
         order.setShippingPhoneNumber(shippingAddressDto.getPhoneNumber());
 
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -256,7 +274,7 @@ public class OrderService {
         }
         else if (newStatus == OrderStatus.DELIVERED) {
             order.setDeliveredDate(LocalDateTime.now());
-            releaseEscrowPayment(orderId);
+            escrowService.releaseEscrow(orderId);
 
             // notify admin
             try {
@@ -382,61 +400,6 @@ public class OrderService {
         }
         productRepository.save(product);
     }
-    public void releaseEscrowPayment(Long orderId) {
-        // 1️⃣ Fetch the order
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
-
-        // 2️⃣ Fetch the Payment associated with this order
-        Payment payment = paymentRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found for order: " + orderId));
-
-        if (payment.getEscrowReleased()) {
-             System.out.println("Funds already released for order: " + order.getOrderNumber());
-             return;
-        }
-
-        // 3️⃣ Get all SellerOrders for this order
-        List<SellerOrder> sellerOrders = sellerOrderRepository.findByOrderId(orderId);
-        if (sellerOrders.isEmpty()) {
-            throw new IllegalStateException("No seller orders found for order: " + order.getOrderNumber());
-        }
-
-        // 4️⃣ Release funds to each seller
-        for (SellerOrder sellerOrder : sellerOrders) {
-            if (sellerOrder.getStatus() == SellerOrderStatus.PAYOUT_RELEASED) {
-                continue;
-            }
-
-            User seller = sellerOrder.getSeller();
-            BigDecimal amountToRelease = sellerOrder.getSubtotal();
-
-            if (seller.getBankAccount() == null) {
-                throw new IllegalStateException("Seller " + seller.getEmail() + " has no bank account configured");
-            }
-
-            String sellerAccountNumber = seller.getBankAccount().getAccountNumber();
-            
-            // Call DemoBankService to release funds (10% commission handled therein)
-            demoBankService.releaseFundsToSeller(sellerAccountNumber, amountToRelease);
-
-            // Update SellerOrder status
-            sellerOrder.setStatus(SellerOrderStatus.PAYOUT_RELEASED);
-            sellerOrderRepository.save(sellerOrder);
-
-            System.out.println("Released " + amountToRelease + " to seller " + seller.getEmail());
-        }
-
-        // 5️⃣ Update main Payment status
-        payment.setEscrowReleased(true);
-        payment.setStatus(PaymentStatus.COMPLETED);
-        paymentRepository.save(payment);
-        
-        // Update order payment status
-        order.setPaymentStatus(PaymentStatus.COMPLETED);
-        orderRepository.save(order);
-    }
-
     public List<Order> getOrdersBySeller(Long sellerId) {
         return orderRepository.findOrdersBySellerId(sellerId);
     }

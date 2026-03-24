@@ -55,6 +55,24 @@ public class Order {
     @JoinColumn(name = "shipping_address_id")
     private Address shippingAddress;
 
+    @Column(name = "shipping_recipient_name")
+    private String shippingRecipientName;
+
+    @Column(name = "shipping_street")
+    private String shippingStreet;
+
+    @Column(name = "shipping_city")
+    private String shippingCity;
+
+    @Column(name = "shipping_state")
+    private String shippingState;
+
+    @Column(name = "shipping_zip_code")
+    private String shippingZipCode;
+
+    @Column(name = "shipping_country")
+    private String shippingCountry;
+
     @Column(name = "shipping_phone_number")
     private String shippingPhoneNumber;
 
@@ -138,6 +156,24 @@ public class Order {
 
     public Address getShippingAddress() { return shippingAddress; }
     public void setShippingAddress(Address shippingAddress) { this.shippingAddress = shippingAddress; }
+
+    public String getShippingRecipientName() { return shippingRecipientName; }
+    public void setShippingRecipientName(String shippingRecipientName) { this.shippingRecipientName = shippingRecipientName; }
+
+    public String getShippingStreet() { return shippingStreet; }
+    public void setShippingStreet(String shippingStreet) { this.shippingStreet = shippingStreet; }
+
+    public String getShippingCity() { return shippingCity; }
+    public void setShippingCity(String shippingCity) { this.shippingCity = shippingCity; }
+
+    public String getShippingState() { return shippingState; }
+    public void setShippingState(String shippingState) { this.shippingState = shippingState; }
+
+    public String getShippingZipCode() { return shippingZipCode; }
+    public void setShippingZipCode(String shippingZipCode) { this.shippingZipCode = shippingZipCode; }
+
+    public String getShippingCountry() { return shippingCountry; }
+    public void setShippingCountry(String shippingCountry) { this.shippingCountry = shippingCountry; }
 
     public String getShippingPhoneNumber() { return shippingPhoneNumber; }
     public void setShippingPhoneNumber(String shippingPhoneNumber) { this.shippingPhoneNumber = shippingPhoneNumber; }

@@ -4,6 +4,7 @@ import com.ecommerce.ecommerce.dto.PaymentResponse;
 import com.ecommerce.ecommerce.entity.Order;
 import com.ecommerce.ecommerce.entity.Payment;
 import com.ecommerce.ecommerce.entity.PaymentStatus;
+import com.ecommerce.ecommerce.entity.TransactionType;
 import com.ecommerce.ecommerce.repository.OrderRepository;
 import com.ecommerce.ecommerce.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
@@ -16,18 +17,18 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final DemoBankService demoBankService;
-    private final OrderService orderService;
+    private final EscrowService escrowService;
     private final ChapaService chapaService;
 
     public PaymentService(PaymentRepository paymentRepository,
                           OrderRepository orderRepository,
                           DemoBankService demoBankService,
-                          OrderService orderService,
+                          EscrowService escrowService,
                           ChapaService chapaService) {
         this.paymentRepository = paymentRepository;
         this.orderRepository = orderRepository;
         this.demoBankService = demoBankService;
-        this.orderService = orderService;
+        this.escrowService = escrowService;
         this.chapaService = chapaService;
     }
 
@@ -51,10 +52,10 @@ public class PaymentService {
 
     // Release escrow: escrow -> seller(s)
     public PaymentResponse releaseEscrow(Long orderId) {
-        // Delegate to OrderService to handle multiple sellers
-        orderService.releaseEscrowPayment(orderId);
+        // Delegate to EscrowService to handle multiple sellers
+        escrowService.releaseEscrow(orderId);
 
-        Payment payment = paymentRepository.findByOrderId(orderId)
+        Payment payment = paymentRepository.findByOrderIdAndTransactionType(orderId, TransactionType.CUSTOMER_PAYMENT)
                 .orElseThrow(() -> new RuntimeException("Payment not found for order"));
 
         return buildPaymentResponse(payment, "Funds released to sellers after commission");
@@ -65,7 +66,7 @@ public class PaymentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        Payment payment = paymentRepository.findByOrderId(orderId)
+        Payment payment = paymentRepository.findByOrderIdAndTransactionType(orderId, TransactionType.CUSTOMER_PAYMENT)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
 
         BigDecimal amountToRefund = refundAmount != null ? refundAmount : payment.getAmount();

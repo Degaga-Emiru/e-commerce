@@ -2,11 +2,16 @@ package com.ecommerce.ecommerce.service;
 
 import com.ecommerce.ecommerce.entity.Escrow;
 import com.ecommerce.ecommerce.entity.EscrowStatus;
+import com.ecommerce.ecommerce.entity.TransactionType;
+import com.ecommerce.ecommerce.entity.User;
+import com.ecommerce.ecommerce.entity.Payment;
+import com.ecommerce.ecommerce.entity.PaymentStatus;
 import com.ecommerce.ecommerce.entity.Order;
 import com.ecommerce.ecommerce.entity.SellerOrder;
 import com.ecommerce.ecommerce.repository.EscrowRepository;
 import com.ecommerce.ecommerce.repository.OrderRepository;
 import com.ecommerce.ecommerce.repository.SellerOrderRepository;
+import com.ecommerce.ecommerce.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,17 +28,23 @@ public class EscrowService {
     private final SellerOrderRepository sellerOrderRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final DemoBankService demoBankService;
+    private final PaymentRepository paymentRepository;
 
     public EscrowService(EscrowRepository escrowRepository, 
                          OrderRepository orderRepository,
                          SellerOrderRepository sellerOrderRepository,
                          NotificationService notificationService,
-                         EmailService emailService) {
+                         EmailService emailService,
+                         DemoBankService demoBankService,
+                         PaymentRepository paymentRepository) {
         this.escrowRepository = escrowRepository;
         this.orderRepository = orderRepository;
         this.sellerOrderRepository = sellerOrderRepository;
         this.notificationService = notificationService;
         this.emailService = emailService;
+        this.demoBankService = demoBankService;
+        this.paymentRepository = paymentRepository;
     }
 
     @Transactional
@@ -68,15 +79,58 @@ public class EscrowService {
         escrow.setReleasedAt(LocalDateTime.now());
         escrowRepository.save(escrow);
 
-        // Notify All Sellers involved in this order via SellerOrder records
+        System.out.println("Processing actual bank transfers for order: " + orderId);
+
+        // Fetch original payment to attach to payouts
+        Payment customerPayment = paymentRepository.findByOrderIdAndTransactionType(orderId, TransactionType.CUSTOMER_PAYMENT).orElse(null);
+
+        // Notify All Sellers involved in this order via SellerOrder records and RELEASE BANK FUNDS
         List<SellerOrder> sellerOrders = sellerOrderRepository.findByOrderId(orderId);
         if (sellerOrders.isEmpty()) {
-            System.err.println("⚠️ Warning: No seller orders found for order #" + orderId + ". Skipping notifications.");
+            System.err.println("⚠️ Warning: No seller orders found for order #" + orderId + ". Skipping payouts.");
             return;
         }
 
         for (SellerOrder so : sellerOrders) {
             if (so.getSeller() == null) continue;
+            
+            // ACTUAL PAYOUT EXECUTION
+            if (so.getStatus() != com.ecommerce.ecommerce.entity.SellerOrderStatus.PAYOUT_RELEASED) {
+                try {
+                    BigDecimal grossAmount = so.getSubtotal();
+                    BigDecimal commission = grossAmount.multiply(new BigDecimal("0.10"));
+                    BigDecimal netAmount = grossAmount.subtract(commission);
+                    
+                    if (so.getSeller().getBankAccount() == null) {
+                        System.err.println("Seller " + so.getSeller().getEmail() + " has no bank account configured. Cannot release funds.");
+                        continue;
+                    }
+                    String sellerAccountNumber = so.getSeller().getBankAccount().getAccountNumber();
+                    demoBankService.releaseFundsToSeller(sellerAccountNumber, netAmount);
+
+                    if (customerPayment != null) {
+                        // Record Seller Payout 
+                        Payment sellerPayment = new Payment(so.getOrder(), grossAmount, PaymentStatus.COMPLETED, customerPayment.getPaymentMethod());
+                        sellerPayment.setTransactionType(TransactionType.SELLER_PAYOUT);
+                        sellerPayment.setSeller(so.getSeller());
+                        sellerPayment.setCommissionAmount(commission);
+                        sellerPayment.setNetAmountToSeller(netAmount);
+                        sellerPayment.setSellerAccountNumber(sellerAccountNumber);
+                        paymentRepository.save(sellerPayment);
+
+                        // Record Platform Commission
+                        Payment commissionPayment = new Payment(so.getOrder(), commission, PaymentStatus.COMPLETED, customerPayment.getPaymentMethod());
+                        commissionPayment.setTransactionType(TransactionType.PLATFORM_COMMISSION);
+                        commissionPayment.setPlatformRoutingNumber(customerPayment.getPlatformRoutingNumber());
+                        paymentRepository.save(commissionPayment);
+                    }
+                    
+                    so.setStatus(com.ecommerce.ecommerce.entity.SellerOrderStatus.PAYOUT_RELEASED);
+                    sellerOrderRepository.save(so);
+                } catch (Exception e) {
+                    System.err.println("Error processing payout for seller: " + e.getMessage());
+                }
+            }
 
             String sellerMsg = String.format("Payment for order #%s has been released. Amount: ETB %.2f.",
                     so.getOrder().getOrderNumber(), so.getSubtotal());
@@ -98,6 +152,12 @@ public class EscrowService {
                         so.getSubtotal().multiply(new BigDecimal("0.10")).doubleValue()
                 );
             } catch (Exception ignored) {}
+        }
+        
+        if (customerPayment != null) {
+            customerPayment.setEscrowReleased(true);
+            customerPayment.setStatus(PaymentStatus.COMPLETED);
+            paymentRepository.save(customerPayment);
         }
     }
 

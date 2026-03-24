@@ -25,6 +25,14 @@ public class Payment {
     @Column(nullable = false)
     private PaymentStatus status; // PENDING, SUCCESS, FAILED, ESCROW_HELD, RELEASED
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transaction_type", nullable = true)
+    private TransactionType transactionType = TransactionType.CUSTOMER_PAYMENT;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seller_id")
+    private User seller;
+
     @Column(name = "payment_method", nullable = false)
     private String paymentMethod; // e.g. "BANK_TRANSFER", "CARD", "PLATFORM_WALLET"
 
@@ -139,6 +147,14 @@ public class Payment {
     public Boolean getEscrowReleased() { return escrowReleased; }
 
     public void setEscrowReleased(Boolean escrowReleased) { this.escrowReleased = escrowReleased; }
+
+    public TransactionType getTransactionType() { return transactionType; }
+
+    public void setTransactionType(TransactionType transactionType) { this.transactionType = transactionType; }
+
+    public User getSeller() { return seller; }
+
+    public void setSeller(User seller) { this.seller = seller; }
 
     public BigDecimal getRefundedAmount() { return refundedAmount; }
 

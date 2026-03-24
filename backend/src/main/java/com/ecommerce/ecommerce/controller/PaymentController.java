@@ -9,6 +9,7 @@ import com.ecommerce.ecommerce.entity.Payment;
 import com.ecommerce.ecommerce.entity.PaymentStatus;
 import com.ecommerce.ecommerce.repository.OrderRepository;
 import com.ecommerce.ecommerce.repository.PaymentRepository;
+import com.ecommerce.ecommerce.entity.TransactionType;
 import com.ecommerce.ecommerce.service.ChapaService;
 import com.ecommerce.ecommerce.service.PaymentService;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +55,7 @@ public class PaymentController {
                 Order order = orderRepository.findByOrderNumber(orderNumber)
                         .orElseThrow(() -> new RuntimeException("Order not found: " + orderNumber));
 
-                Payment payment = paymentRepository.findByOrderId(order.getId())
+                Payment payment = paymentRepository.findByOrderIdAndTransactionType(order.getId(), TransactionType.CUSTOMER_PAYMENT)
                         .orElseThrow(() -> new RuntimeException("Payment record not found for order ID: " + order.getId()));
 
                 // Check nested data status if available

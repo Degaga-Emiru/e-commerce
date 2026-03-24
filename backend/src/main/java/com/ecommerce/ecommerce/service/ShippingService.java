@@ -65,6 +65,25 @@ public class ShippingService {
         ShippingStatus oldStatus = shipping.getStatus();
         if (oldStatus == newStatus) return shipping;
 
+        // Strict linear transition checks
+        if (newStatus == ShippingStatus.CANCELLED) {
+            if (oldStatus == ShippingStatus.SHIPPED || oldStatus == ShippingStatus.OUT_FOR_DELIVERY || oldStatus == ShippingStatus.DELIVERED) {
+                throw new IllegalStateException("Cannot cancel an order that is already shipped or delivered.");
+            }
+        } else {
+            boolean isValid = false;
+            if (oldStatus == ShippingStatus.PENDING && newStatus == ShippingStatus.PROCESSING) isValid = true;
+            else if (oldStatus == ShippingStatus.PROCESSING && newStatus == ShippingStatus.SHIPPED) isValid = true;
+            else if (oldStatus == ShippingStatus.SHIPPED && newStatus == ShippingStatus.OUT_FOR_DELIVERY) isValid = true;
+            else if (oldStatus == ShippingStatus.OUT_FOR_DELIVERY && newStatus == ShippingStatus.DELIVERED) isValid = true;
+            
+            // Note: Temporary logic to permit PENDING->CANCELLED, etc. is handled above. 
+            // Any other jump is invalid.
+            if (!isValid) {
+                throw new IllegalStateException("Invalid shipping status transition from " + oldStatus + " to " + newStatus);
+            }
+        }
+
         shipping.setStatus(newStatus);
         if (carrier != null) shipping.setCarrier(carrier);
         if (trackingNumber != null) shipping.setTrackingNumber(trackingNumber);

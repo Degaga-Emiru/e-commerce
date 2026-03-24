@@ -5,8 +5,9 @@ import toast from 'react-hot-toast';
 import {
   BarChart2, Users, ShoppingBag, DollarSign, Package, Truck,
   Shield, Bell, Settings, Store, CheckCircle, RefreshCw,
-  Lock, Unlock, TrendingUp, Send, Search,
+  Lock, Unlock, TrendingUp, Send, Search, ExternalLink,
 } from 'lucide-react';
+import Link from 'next/link';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Stats {
@@ -364,7 +365,12 @@ export default function AdminDashboard() {
             : orders.slice(0, 8).map(o => (
               <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                 <div>
-                  <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 13 }}>#{o.orderNumber}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 13 }}>#{o.orderNumber}</p>
+                    <Link href={`/admin/orders/${o.id}`} style={{ color: '#fff', background: '#6366f1', padding: '0.2rem 0.5rem', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, textDecoration: 'none', fontWeight: 600 }}>
+                      View Details <ExternalLink size={10} />
+                    </Link>
+                  </div>
                   <p style={{ margin: 0, color: '#475569', fontSize: 11 }}>{o.user?.firstName} {o.user?.lastName}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -399,7 +405,12 @@ export default function AdminDashboard() {
             <div key={o.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '1.1rem 0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'flex-start' }}>
                 <div>
-                  <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>#{o.orderNumber}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>#{o.orderNumber}</p>
+                    <Link href={`/admin/orders/${o.id}`} style={{ color: '#fff', background: '#6366f1', padding: '0.2rem 0.6rem', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, textDecoration: 'none', fontWeight: 600 }}>
+                      View Details <ExternalLink size={10} />
+                    </Link>
+                  </div>
                   <p style={{ margin: '0.2rem 0 0', color: '#94a3b8', fontSize: 12 }}>
                     {o.user?.firstName} {o.user?.lastName} · {o.user?.email}
                   </p>
@@ -452,7 +463,12 @@ export default function AdminDashboard() {
                   <div key={o.id} style={S.card}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
                       <div>
-                        <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 15 }}>Order #{o.orderNumber}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <p style={{ margin: 0, color: '#f1f5f9', fontWeight: 700, fontSize: 15 }}>Order #{o.orderNumber}</p>
+                          <Link href={`/admin/orders/${o.id}`} style={{ color: '#fff', background: '#6366f1', padding: '0.25rem 0.6rem', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, textDecoration: 'none', fontWeight: 600 }}>
+                            View Details <ExternalLink size={10} />
+                          </Link>
+                        </div>
                         <p style={{ margin: '0.2rem 0 0', color: '#94a3b8', fontSize: 12 }}>
                           {o.user?.firstName} {o.user?.lastName} · {new Date(o.orderDate).toLocaleDateString()}
                         </p>
@@ -472,20 +488,20 @@ export default function AdminDashboard() {
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                               <div style={{
                                 width: 32, height: 32, borderRadius: '50%',
-                                background: done ? '#10b981' : 'rgba(255,255,255,0.08)',
-                                border: current ? '2px solid #10b981' : 'none',
+                                background: o.status === 'CANCELLED' ? '#ef4444' : done ? '#10b981' : 'rgba(255,255,255,0.08)',
+                                border: (current && o.status !== 'CANCELLED') ? '2px solid #10b981' : 'none',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontSize: 12, fontWeight: 800,
-                                color: done ? '#fff' : '#475569',
+                                color: (done || o.status === 'CANCELLED') ? '#fff' : '#475569',
                               }}>
-                                {done ? '✓' : i + 1}
+                                {o.status === 'CANCELLED' ? '✘' : done ? '✓' : i + 1}
                               </div>
                               <span style={{ fontSize: 9, color: done ? '#10b981' : '#475569', whiteSpace: 'nowrap', fontWeight: done ? 700 : 400, textAlign: 'center', maxWidth: 70 }}>
                                 {step.replace(/_/g, ' ')}
                               </span>
                             </div>
                             {i < STEPS.length - 1 && (
-                              <div style={{ width: 40, height: 2, background: i < stepIdx ? '#10b981' : 'rgba(255,255,255,0.08)', margin: '0 4px 18px' }} />
+                              <div style={{ width: 40, height: 2, background: o.status === 'CANCELLED' ? '#ef4444' : i < stepIdx ? '#10b981' : 'rgba(255,255,255,0.08)', margin: '0 4px 18px' }} />
                             )}
                           </div>
                         );
@@ -500,26 +516,31 @@ export default function AdminDashboard() {
                       ) : (
                         <>
                           {STEPS.map((s, idx) => {
+                            const isNextStep = idx === stepIdx + 1;
                             const isCurrent = o.status === s;
                             const isPast = stepIdx > idx;
+                            const isDisabled = !isNextStep || updatingOrderId === o.id;
+
                             return (
                               <button key={s} onClick={() => updateShipping(o.id, s)}
-                                disabled={isCurrent || isPast || updatingOrderId === o.id}
+                                disabled={isDisabled}
                                 style={{ 
-                                  ...btn(SC[s] || '#6366f1', !isCurrent), 
-                                  opacity: (isCurrent || isPast || updatingOrderId === o.id) ? 0.4 : 1, 
+                                  ...btn(SC[s] || '#6366f1', isDisabled), 
+                                  opacity: isDisabled ? 0.4 : 1, 
                                   padding: '0.4rem 0.9rem', fontSize: 11,
-                                  cursor: (isCurrent || isPast || updatingOrderId === o.id) ? 'not-allowed' : 'pointer'
+                                  cursor: isDisabled ? 'not-allowed' : 'pointer'
                                 }}>
-                                {updatingOrderId === o.id && isCurrent ? '...' : s.replace(/_/g, ' ')}
+                                {updatingOrderId === o.id && isNextStep ? '...' : s.replace(/_/g, ' ')}
                               </button>
                             );
                           })}
-                          <button onClick={() => updateShipping(o.id, 'CANCELLED')}
-                            disabled={updatingOrderId === o.id}
-                            style={{ ...btn('#ef4444', true), padding: '0.4rem 0.9rem', fontSize: 11, opacity: updatingOrderId === o.id ? 0.5 : 1 }}>
-                            Cancel Order
-                          </button>
+                          {(!['OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status)) && (
+                            <button onClick={() => updateShipping(o.id, 'CANCELLED')}
+                              disabled={updatingOrderId === o.id}
+                              style={{ ...btn('#ef4444', true), padding: '0.4rem 0.9rem', fontSize: 11, opacity: updatingOrderId === o.id ? 0.5 : 1 }}>
+                              Cancel Order
+                            </button>
+                          )}
                         </>
                       )}
                     </div>

@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.dto;
 public class ShippingAddressDto {
+    private Long addressId;
     private String recipientName;
     private String street;
     private String city;
@@ -11,6 +12,9 @@ public class ShippingAddressDto {
     public ShippingAddressDto() {}
 
     // Getters and Setters
+    public Long getAddressId() { return addressId; }
+    public void setAddressId(Long addressId) { this.addressId = addressId; }
+
     public String getRecipientName() { return recipientName; }
     public void setRecipientName(String recipientName) { this.recipientName = recipientName; }
 
