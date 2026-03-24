@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.controller;
 
+import com.ecommerce.ecommerce.dto.ApiResponse;
 import com.ecommerce.ecommerce.entity.Notification;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.repository.UserRepository;
@@ -27,33 +28,35 @@ public class NotificationController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<Notification>> getMyNotifications() {
+    public ResponseEntity<ApiResponse<List<Notification>>> getMyNotifications() {
         String email = SecurityUtils.getCurrentUserEmail();
         User user = userRepository.findByEmail(email).orElseThrow();
-        return ResponseEntity.ok(notificationService.getUserNotifications(user.getId()));
+        List<Notification> result = notificationService.getUserNotifications(user.getId());
+        return ResponseEntity.ok(new ApiResponse<>(true, "Notifications retrieved", result));
     }
 
     @GetMapping("/unread-count")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Long>> getUnreadCount() {
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getUnreadCount() {
         String email = SecurityUtils.getCurrentUserEmail();
         User user = userRepository.findByEmail(email).orElseThrow();
-        return ResponseEntity.ok(Map.of("count", notificationService.getUnreadCount(user.getId())));
+        Map<String, Long> result = Map.of("count", notificationService.getUnreadCount(user.getId()));
+        return ResponseEntity.ok(new ApiResponse<>(true, "Unread count", result));
     }
 
     @PutMapping("/{id}/read")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
         notificationService.markAsRead(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "Notification marked as read"));
     }
 
     @PutMapping("/read-all")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> markAllAsRead() {
+    public ResponseEntity<ApiResponse<Void>> markAllAsRead() {
         String email = SecurityUtils.getCurrentUserEmail();
         User user = userRepository.findByEmail(email).orElseThrow();
         notificationService.markAllAsRead(user.getId());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(new ApiResponse<>(true, "All notifications marked as read"));
     }
 }

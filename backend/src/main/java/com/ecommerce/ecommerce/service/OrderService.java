@@ -27,7 +27,9 @@ public class OrderService {
     private final DemoBankService demoBankService;
     private final PaymentRepository paymentRepository;
     private final ShippingService shippingService;
+    private final ShippingRepository shippingRepository;
     private final EscrowService escrowService;
+    private final EscrowRepository escrowRepository;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
@@ -36,7 +38,8 @@ public class OrderService {
                         CartRepository cartRepository, CartItemRepository cartItemRepository,
                         SellerOrderRepository sellerOrderRepository, DemoBankService demoBankService,
                         PaymentRepository paymentRepository, ShippingService shippingService,
-                        EscrowService escrowService) {
+                        ShippingRepository shippingRepository,
+                        EscrowService escrowService, EscrowRepository escrowRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -49,7 +52,9 @@ public class OrderService {
         this.demoBankService = demoBankService;
         this.paymentRepository = paymentRepository;
         this.shippingService = shippingService;
+        this.shippingRepository = shippingRepository;
         this.escrowService = escrowService;
+        this.escrowRepository = escrowRepository;
     }
     @Transactional
     public Order createOrder(Long userId, List<OrderItem> orderItems,
@@ -254,11 +259,13 @@ public class OrderService {
             releaseEscrowPayment(orderId);
 
             // notify admin
-            emailService.sendAdminNotification(
-                    "admin@store.com",
-                    "Order Delivered",
-                    "Order " + order.getOrderNumber() + " has been delivered successfully."
-            );
+            try {
+                emailService.sendAdminNotification(
+                        "Order Delivered: #" + order.getOrderNumber(),
+                        "Order " + order.getOrderNumber() + " has been delivered successfully.",
+                        "#10b981"
+                );
+            } catch (Exception ignored) {}
         }
 
         order.setStatus(newStatus);
@@ -436,5 +443,22 @@ public class OrderService {
 
     public List<Order> getAllOrders() {
         return orderRepository.findAllByOrderByOrderDateDesc();
+    }
+
+    @Transactional
+    public void deleteOrder(Long orderId) {
+        Order order = getOrderById(orderId);
+        
+        // 1. Delete associated records
+        shippingRepository.deleteByOrderId(orderId);
+        escrowRepository.deleteByOrderId(orderId);
+        paymentRepository.deleteByOrderId(orderId);
+        sellerOrderRepository.deleteByOrderId(orderId);
+        
+        // 2. OrderItems are cascaded by Order entity, but we can be explicit
+        orderItemRepository.deleteAll(order.getOrderItems());
+        
+        // 3. Delete the order
+        orderRepository.delete(order);
     }
 }

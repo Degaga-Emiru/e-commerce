@@ -7,10 +7,12 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import AddressSection from '@/components/profile/AddressSection';
 import DashboardStats from '@/components/profile/DashboardStats';
+import PersonalInfo from '@/components/profile/PersonalInfo';
+import PasswordChange from '@/components/profile/PasswordChange';
 
 const ProfilePage = () => {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState<'menu' | 'addresses' | 'orders'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'addresses' | 'orders' | 'info' | 'password' | 'settings'>('menu');
   const router = useRouter();
 
   // Fix: Move side-effect redirect to useEffect to skip render-time update error
@@ -30,34 +32,31 @@ const ProfilePage = () => {
     router.push('/');
   };
 
-  // Base menu items
-  const menuItems = [
-    { id: 'orders', icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
-    { id: 'addresses', icon: <MapPin size={20} />, label: 'My Addresses', description: 'Manage your shipping addresses' },
-  ];
-
   // Role-specific dashboard links
-  if (user?.role === 'SELLER') {
-    menuItems.unshift({ 
-      id: 'seller-dash', 
-      icon: <LayoutDashboard size={20} />, 
-      label: 'Seller Dashboard', 
-      description: 'Manage products, orders, and shop settings' 
-    });
-  } else if (user?.role === 'ADMIN') {
-    menuItems.unshift({ 
-      id: 'admin-dash', 
-      icon: <ShieldCheck size={20} />, 
-      label: 'Admin Panel', 
-      description: 'System administration and management' 
-    });
+  let menuItems: any[] = [];
+  
+  if (user?.role === 'ADMIN') {
+    menuItems = [
+      { id: 'admin-dash', icon: <ShieldCheck size={20} />, label: 'Admin Panel', description: 'System administration and management' },
+      { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
+      { id: 'password', icon: <Settings size={20} />, label: 'Password Change', description: 'Change your account password securely' }
+    ];
+  } else if (user?.role === 'SELLER') {
+    menuItems = [
+      { id: 'seller-dash', icon: <LayoutDashboard size={20} />, label: 'Seller Dashboard', description: 'Manage products, orders, and shop settings' },
+      { id: 'orders', icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
+      { id: 'addresses', icon: <MapPin size={20} />, label: 'My Addresses', description: 'Manage your shipping addresses' },
+      { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
+      { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' }
+    ];
+  } else {
+    menuItems = [
+      { id: 'orders', icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
+      { id: 'addresses', icon: <MapPin size={20} />, label: 'My Addresses', description: 'Manage your shipping addresses' },
+      { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
+      { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' }
+    ];
   }
-
-  // Add remaining standard slots
-  menuItems.push(
-    { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
-    { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' }
-  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -72,6 +71,33 @@ const ProfilePage = () => {
               Back to Profile
             </button>
             <AddressSection />
+          </div>
+        );
+      case 'info':
+        return (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <button 
+              onClick={() => setActiveTab('menu')}
+              className="flex items-center gap-2 text-gray-500 hover:text-orange-500 mb-6 font-bold transition-colors"
+            >
+              <ArrowLeft size={20} />
+              Back to Profile
+            </button>
+            <PersonalInfo />
+          </div>
+        );
+      case 'password':
+      case 'settings':
+        return (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+            <button 
+              onClick={() => setActiveTab('menu')}
+              className="flex items-center gap-2 text-gray-500 hover:text-orange-500 mb-6 font-bold transition-colors"
+            >
+              <ArrowLeft size={20} />
+              Back to Profile
+            </button>
+            <PasswordChange />
           </div>
         );
       case 'orders':
@@ -89,7 +115,7 @@ const ProfilePage = () => {
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'addresses') {
+                  if (item.id === 'addresses' || item.id === 'info' || item.id === 'password' || item.id === 'settings') {
                     setActiveTab(item.id as any);
                   } else if (item.id === 'orders') {
                     router.push('/profile/orders');

@@ -58,8 +58,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll() // ✅ Explicitly permit OAuth2 URLs
                         .requestMatchers("/public/**").permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/seller/**").hasAnyRole("SELLER", "ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers("/users/profile").authenticated()
                         .anyRequest().authenticated()
                 )

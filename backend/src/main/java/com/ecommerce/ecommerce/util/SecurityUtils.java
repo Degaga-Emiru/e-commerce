@@ -11,4 +11,13 @@ public class SecurityUtils {
         }
         return authentication.getName();
     }
+
+    public static String getCurrentUserRole() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities() == null) return "UNKNOWN";
+        return authentication.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("UNKNOWN");
+    }
 }

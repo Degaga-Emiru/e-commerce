@@ -20,6 +20,12 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const extract = (res: any) => {
+    if (!res?.data) return [];
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data.data)) return res.data.data;
+    return [];
+  };
 
   const fetch = async () => {
     if (!isAuthenticated) return;
@@ -28,8 +34,9 @@ export default function NotificationBell() {
         notificationApi.getNotifications(),
         notificationApi.getUnreadCount(),
       ]);
-      setNotifications(notifRes.data || []);
-      setUnreadCount(countRes.data?.count || 0);
+      setNotifications(extract(notifRes));
+      const cData = countRes.data;
+      setUnreadCount(cData?.data?.count ?? cData?.count ?? 0);
     } catch (e) {
         console.error("Failed to fetch notifications", e);
     }

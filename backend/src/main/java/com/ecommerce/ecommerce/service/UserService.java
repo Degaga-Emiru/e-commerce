@@ -270,4 +270,7 @@ public class UserService {
         emailService.sendSimpleEmail(user.getEmail(), "Password Changed",
                 "Your account password has been changed successfully.");
     }
-}
+    public User updateUser(User user) {
+        return userRepository.save(user);
+    }
+}

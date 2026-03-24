@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,13 +18,18 @@ public class Order {
     private String orderNumber;
     @ManyToOne
     @JoinColumn(name = "customer_id")
+    @JsonIgnoreProperties({"orders", "products", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
     private User customer;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"orders", "products", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
     private User user;
+
     @ManyToOne
     @JoinColumn(name = "seller_id")
-    private User seller; // or Merchant depending on your model
+    @JsonIgnoreProperties({"orders", "products", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
+    private User seller;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -42,6 +48,7 @@ public class Order {
     private BigDecimal finalAmount;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"order", "sellerOrder"})
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @ManyToOne(cascade = CascadeType.ALL)

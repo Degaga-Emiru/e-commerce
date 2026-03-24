@@ -77,6 +77,7 @@ public class SellerController {
             @RequestBody Map<String, String> body) {
         ShippingStatus status = ShippingStatus.valueOf(body.get("status"));
         return ResponseEntity.ok(shippingService.updateShippingStatus(orderId, status,
-                body.get("carrier"), body.get("trackingNumber")));
+                body.get("carrier"), body.get("trackingNumber"),
+                body.getOrDefault("note", "Status updated by seller"), "SELLER"));
     }
 }

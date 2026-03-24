@@ -17,11 +17,17 @@ export default function NotificationsPage() {
   const { isAuthenticated } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const extract = (res: any) => {
+    if (!res?.data) return [];
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data.data)) return res.data.data;
+    return [];
+  };
 
   const fetchNotifications = async () => {
     try {
       const res = await notificationApi.getNotifications();
-      setNotifications(res.data || []);
+      setNotifications(extract(res));
     } catch (e) {
       console.error(e);
     } finally {

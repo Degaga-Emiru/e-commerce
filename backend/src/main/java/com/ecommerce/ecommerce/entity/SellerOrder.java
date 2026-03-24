@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.entity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,11 +20,12 @@ public class SellerOrder {
     // Link to the main customer order
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnoreProperties({"orderItems", "seller", "user", "customer", "shippingAddress", "discountCoupon"})
     private Order order;
 
-    // The seller responsible for these items
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
+    @JsonIgnoreProperties({"orders", "products", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
     private User seller;
 
     @Enumerated(EnumType.STRING)
@@ -36,6 +38,7 @@ public class SellerOrder {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @OneToMany(mappedBy = "sellerOrder", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"sellerOrder", "order"})
     private List<OrderItem> items;
 
     // ✅ Default constructor (required by JPA)

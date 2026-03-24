@@ -2,6 +2,8 @@ package com.ecommerce.ecommerce.service;
 
 import com.ecommerce.ecommerce.entity.*;
 import com.ecommerce.ecommerce.repository.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,9 @@ public class ShippingService {
     private final EmailService emailService;
     private final EscrowService escrowService;
     private final ShippingHistoryService shippingHistoryService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public ShippingService(ShippingRepository shippingRepository, 
                            OrderRepository orderRepository,
@@ -119,5 +124,17 @@ public class ShippingService {
 
     public Object getShippingHistory(Long shippingId) {
         return shippingHistoryService.getTrackingHistory(shippingId);
+    }
+
+    @Transactional
+    public void syncDatabase() {
+        try {
+            // Drop the constraint if it exists to allow new Enum values added after DB was initialized
+            // This is common when 'hbm2ddl.auto=update' is used but it doesn't update legacy constraints.
+            entityManager.createNativeQuery("ALTER TABLE shipping DROP CONSTRAINT IF EXISTS shipping_status_check").executeUpdate();
+            System.out.println("✅ Database Sync: Dropped shipping_status_check constraint.");
+        } catch (Exception e) {
+            System.err.println("❌ Database Sync Failed: " + e.getMessage());
+        }
     }
 }

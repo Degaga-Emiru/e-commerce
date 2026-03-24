@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class Escrow {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"orderItems", "seller", "user", "customer", "shippingAddress", "discountCoupon"})
     private Order order;
 
     @Column(name = "total_amount", precision = 15, scale = 2, nullable = false)

@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -13,6 +14,7 @@ public class Shipping {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"orderItems", "seller", "user", "customer", "shippingAddress", "discountCoupon"})
     private Order order;
 
     @Enumerated(EnumType.STRING)
@@ -65,5 +67,6 @@ public class Shipping {
     public LocalDateTime getEstimatedDelivery() { return estimatedDelivery; }
     public void setEstimatedDelivery(LocalDateTime estimatedDelivery) { this.estimatedDelivery = estimatedDelivery; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

@@ -4,6 +4,7 @@ import com.ecommerce.ecommerce.dto.UserDto;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.UserRole;
 import com.ecommerce.ecommerce.service.UserService;
+import com.ecommerce.ecommerce.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,31 +25,53 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('SELLER') or hasRole('ADMIN')")
-    public ResponseEntity<?> getProfile(@RequestHeader("Authorization") String token) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserDto>> getProfile() {
         try {
-            // Extract user email from token and get profile
-            // For now, return sample response
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "User profile retrieved successfully");
-            return ResponseEntity.ok(response);
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userService.getUserByEmail(email);
+            return ResponseEntity.ok(new ApiResponse<>(true, "User profile retrieved successfully", convertToDto(user)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
         }
     }
 
     @PutMapping("/profile")
-    @PreAuthorize("hasRole('CUSTOMER') or hasRole('SELLER') or hasRole('ADMIN')")
-    public ResponseEntity<?> updateProfile(@RequestBody Map<String, String> profileData) {
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<UserDto>> updateProfile(@RequestBody Map<String, String> profileData) {
         try {
-            // Implementation for profile update
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Profile updated successfully");
-            return ResponseEntity.ok(response);
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userService.getUserByEmail(email);
+            
+            String firstName = profileData.getOrDefault("firstName", user.getFirstName());
+            String lastName = profileData.getOrDefault("lastName", user.getLastName());
+            String phoneNumber = profileData.getOrDefault("phoneNumber", user.getPhoneNumber());
+
+            User updatedUser = userService.updateUserProfile(user.getId(), firstName, lastName, phoneNumber);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Profile updated successfully", convertToDto(updatedUser)));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
+        }
+    }
+
+    @PutMapping("/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userService.getUserByEmail(email);
+            
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Current and new password are required"));
+            }
+
+            userService.changePassword(user.getId(), currentPassword, newPassword);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Password changed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
         }
     }
 

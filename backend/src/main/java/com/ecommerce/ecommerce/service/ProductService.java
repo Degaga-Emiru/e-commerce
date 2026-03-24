@@ -143,7 +143,7 @@ public class ProductService {
         }
 
         Product savedProduct = productRepository.save(product);
-        emailService.sendNewProductNotification(savedProduct);
+        try { emailService.sendNewProductNotification(savedProduct); } catch (Exception ignored) {}
 
         return productMapper.toDto(savedProduct);
     }

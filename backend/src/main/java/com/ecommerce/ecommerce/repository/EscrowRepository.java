@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface EscrowRepository extends JpaRepository<Escrow, Long> {
     Optional<Escrow> findByOrderId(Long orderId);
+    void deleteByOrderId(Long orderId);
 }

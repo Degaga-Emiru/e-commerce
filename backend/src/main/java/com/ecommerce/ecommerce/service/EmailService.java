@@ -95,6 +95,43 @@ public class EmailService {
         sendHtmlMessage(to, subject, htmlContent);
     }
 
+    public void sendSystemNotificationToAllUsers(String subject, String message, String color) {
+        List<User> allUsers = userRepository.findAll();
+        for (User user : allUsers) {
+            if (user.isEnabled()) {
+                try {
+                    sendSystemNotification(user.getEmail(), user.getFirstName(), subject, message, color);
+                } catch (Exception e) {
+                    System.err.println("Failed to send notification to: " + user.getEmail());
+                }
+            }
+        }
+    }
+
+    public void sendAdminNotification(String subject, String message, String color) {
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        for (User admin : admins) {
+            try {
+                sendSystemNotification(admin.getEmail(), admin.getFirstName(), subject, message, color);
+            } catch (Exception e) {
+                System.err.println("Admin notify failed: " + e.getMessage());
+            }
+        }
+    }
+
+    public void sendNewProductNotification(com.ecommerce.ecommerce.entity.Product product) {
+        // Notify admins about new product listing
+        List<User> admins = userRepository.findByRole(UserRole.ADMIN);
+        for (User admin : admins) {
+            try {
+                sendSimpleEmail(admin.getEmail(), "New Product Listed: " + product.getName(),
+                    "A new product '" + product.getName() + "' has been listed. Price: ETB " + product.getPrice());
+            } catch (Exception e) {
+                System.err.println("New product notify failed: " + e.getMessage());
+            }
+        }
+    }
+
     private void sendHtmlMessage(String to, String subject, String htmlContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

@@ -16,6 +16,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByTransactionId(String transactionId);
     List<Payment> findByStatus(PaymentStatus status);
     Optional<Payment> findByOrderId(Long orderId);  // Correct
+    void deleteByOrderId(Long orderId);
     @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate")
     List<Payment> findByPaymentDateBetween(@Param("startDate") LocalDateTime startDate,
                                            @Param("endDate") LocalDateTime endDate);
