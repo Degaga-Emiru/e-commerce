@@ -4,6 +4,7 @@ import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { Star } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 interface Review { id: number; rating: number; comment: string; user?: { firstName: string; lastName: string }; createdAt: string; }
 
@@ -19,6 +20,16 @@ export default function ProductReviews({ productId, canReview }: Props) {
   const [form, setForm] = useState({ rating: 5, comment: '' });
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+
+  const searchParams = useSearchParams();
+  const shouldOpenReview = searchParams.get('review') === 'true';
+
+  useEffect(() => {
+    if (canReview && shouldOpenReview) {
+      setShowForm(true);
+      setTimeout(() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    }
+  }, [canReview, shouldOpenReview]);
 
   const fetchReviews = () => {
     api.get(`/reviews/product/${productId}`).then(r => {
@@ -59,7 +70,7 @@ export default function ProductReviews({ productId, canReview }: Props) {
   );
 
   return (
-    <div style={{ marginTop: '3rem', fontFamily: "'Inter', sans-serif" }}>
+    <div id="reviews-section" style={{ marginTop: '3rem', fontFamily: "'Inter', sans-serif" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
           <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#1e293b' }}>Customer Reviews</h3>

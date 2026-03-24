@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
-import { CreditCard, Truck, ShieldCheck, ChevronRight, MapPin, Loader2, Plus } from 'lucide-react';
+import { CreditCard, Truck, ShieldCheck, ChevronRight, MapPin, Loader2, Plus, Ticket } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/services/api';
 import { useRouter } from 'next/navigation';
@@ -28,6 +28,20 @@ const CheckoutPage = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingAddresses, setFetchingAddresses] = useState(true);
+  const [couponCode, setCouponCode] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const isNewUser = user?.isNewUser;
+
+  // Auto-fill coupon for new users
+  useEffect(() => {
+    if (isNewUser && !couponApplied) {
+      setCouponCode('WELCOME10');
+      const disc = cartTotal * 0.1;
+      setDiscount(disc);
+      setCouponApplied(true);
+    }
+  }, [isNewUser, cartTotal]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -72,6 +86,7 @@ const CheckoutPage = () => {
           productId: item.productId,
           quantity: item.quantity
         })),
+        couponCode: couponApplied ? couponCode : undefined,
         shippingAddress: {
           addressId: selectedAddr.id,
           recipientName: `${user?.firstName} ${user?.lastName}`,
@@ -235,17 +250,63 @@ const CheckoutPage = () => {
               ))}
               
               <div className="pt-6 border-t border-gray-50 space-y-4">
+                {/* Coupon Code Section */}
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Coupon Code</label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Ticket size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                      <input 
+                        type="text" 
+                        value={couponCode} 
+                        onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponApplied(false); setDiscount(0); }}
+                        placeholder="Enter code" 
+                        className="w-full pl-9 pr-3 py-3 border border-gray-100 rounded-xl text-sm font-bold focus:outline-none focus:border-orange-500 text-gray-900"
+                      />
+                    </div>
+                    <button 
+                      onClick={() => {
+                        if (!couponCode) return;
+                        // Simple client-side validation for WELCOME10
+                        if (couponCode === 'WELCOME10' && isNewUser) {
+                          setDiscount(cartTotal * 0.1);
+                          setCouponApplied(true);
+                          toast.success('🎉 New user discount applied!');
+                        } else if (couponCode === 'WELCOME10' && !isNewUser) {
+                          toast.error('This coupon is for new users only');
+                        } else {
+                          toast.error('Invalid coupon code');
+                        }
+                      }}
+                      className="bg-orange-500 text-white px-4 py-3 rounded-xl text-sm font-black hover:bg-orange-600 transition-all shrink-0"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponApplied && (
+                    <p className="text-green-600 text-xs font-bold flex items-center gap-1">
+                      ✅ New user discount applied successfully 🎉
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex justify-between items-center text-gray-500">
                   <span className="font-medium">Subtotal</span>
                   <span className="font-bold text-gray-900">ETB {cartTotal.toLocaleString()}</span>
                 </div>
+                {couponApplied && discount > 0 && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span className="font-medium">Discount (-10%)</span>
+                    <span className="font-bold">-ETB {discount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center text-gray-500">
                   <span className="font-medium">Shipping</span>
                   <span className="text-green-600 font-black">FREE</span>
                 </div>
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                   <span className="text-gray-900 font-black text-xl tracking-tight">TOTAL</span>
-                  <span className="text-orange-500 font-black text-3xl tracking-tighter">ETB {cartTotal.toLocaleString()}</span>
+                  <span className="text-orange-500 font-black text-3xl tracking-tighter">ETB {(cartTotal - discount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>

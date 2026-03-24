@@ -17,8 +17,8 @@ interface Order {
   paymentStatus: string;
   finalAmount: number;
   orderDate: string;
-  orderItems: { productName?: string; quantity: number; price: number }[];
-  shippingAddress?: { street: string; city: string; state: string; zipCode: string; country: string };
+  orderItems: { productId?: number; productName?: string; quantity: number; price: number; productImage?: string }[];
+  shippingAddress?: { recipientName?: string; street: string; city: string; state: string; zipCode: string; country: string; phoneNumber?: string };
   shipping?: { carrier?: string; trackingNumber?: string };
 }
 
@@ -159,7 +159,16 @@ export default function OrderHistoryPage() {
                                         <span style={{ color:'#f1f5f9', fontSize:14, fontWeight:600 }}>{item.productName || 'Product'}</span>
                                         <span style={{ color:'#64748b', fontSize:12 }}>Qty: {item.quantity}</span>
                                     </div>
-                                    <span style={{ color:'#cbd5e1', fontSize:14, fontWeight:700 }}>ETB {(item.price * item.quantity).toLocaleString()}</span>
+                                    <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap: 6 }}>
+                                        <span style={{ color:'#cbd5e1', fontSize:14, fontWeight:700 }}>ETB {(item.price * item.quantity).toLocaleString()}</span>
+                                        {order.status === 'DELIVERED' && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); window.location.href = `/product/${item.productId}?review=true`; }} 
+                                                style={{ background: '#6366f1', color: '#fff', border: 'none', padding: '0.3rem 0.8rem', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                                                ⭐ Write Review
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -172,8 +181,10 @@ export default function OrderHistoryPage() {
                                     <div style={{ display:'flex', gap:10 }}>
                                         <MapPin size={16} color="#6366f1" style={{ flexShrink:0, marginTop:2 }} />
                                         <div style={{ color:'#cbd5e1', fontSize:13, lineHeight:'1.5' }}>
+                                            {order.shippingAddress.recipientName && <span style={{ fontWeight: 700, color: '#f1f5f9', display: 'block', marginBottom: 2 }}>{order.shippingAddress.recipientName}</span>}
                                             {order.shippingAddress.street}<br/>
                                             {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                                            {order.shippingAddress.phoneNumber && <span style={{ display: 'block', marginTop: 2, color: '#94a3b8' }}>📞 {order.shippingAddress.phoneNumber}</span>}
                                         </div>
                                     </div>
                                 )}

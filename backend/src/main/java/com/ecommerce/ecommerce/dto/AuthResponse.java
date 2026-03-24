@@ -1,6 +1,7 @@
 package com.ecommerce.ecommerce.dto;
 
 import org.springframework.security.core.userdetails.UserDetails;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collection;
 
 public class AuthResponse {
@@ -11,6 +12,8 @@ public class AuthResponse {
     private String firstName;
     private String lastName;
     private String role;
+    @JsonProperty("isNewUser")
+    private boolean isNewUser;
     private Collection<String> authorities;
 
     public AuthResponse() {}
@@ -25,13 +28,14 @@ public class AuthResponse {
         }
     }
 
-    public AuthResponse(String token, Long id, String email, String firstName, String lastName, String role) {
+    public AuthResponse(String token, Long id, String email, String firstName, String lastName, String role, boolean isNewUser) {
         this.token = token;
         this.id = id;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
+        this.isNewUser = isNewUser;
     }
 
     // Getters and Setters
@@ -55,6 +59,9 @@ public class AuthResponse {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public boolean isNewUser() { return isNewUser; }
+    public void setNewUser(boolean newUser) { isNewUser = newUser; }
 
     public Collection<String> getAuthorities() { return authorities; }
     public void setAuthorities(Collection<String> authorities) { this.authorities = authorities; }

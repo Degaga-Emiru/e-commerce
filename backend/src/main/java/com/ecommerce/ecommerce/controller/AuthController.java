@@ -3,6 +3,7 @@ import com.ecommerce.ecommerce.dto.*;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.security.JwtUtil;
 import com.ecommerce.ecommerce.service.UserService;
+import com.ecommerce.ecommerce.repository.OrderRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,13 +23,16 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
     private final UserService userService;
+    private final OrderRepository orderRepository;
 
     public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil,
-                          UserDetailsService userDetailsService, UserService userService) {
+                          UserDetailsService userDetailsService, UserService userService,
+                          OrderRepository orderRepository) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.userService = userService;
+        this.orderRepository = orderRepository;
     }
 
     @PostMapping("/register")
@@ -101,8 +105,10 @@ public class AuthController {
 
             // Get user details for response
             User user = userService.getUserByEmail(authRequest.getEmail());
+            boolean isNewUser = orderRepository.countByUserId(user.getId()) == 0;
+            
             AuthResponse authResponse = new AuthResponse(jwt, user.getId(), user.getEmail(),
-                    user.getFirstName(), user.getLastName(), user.getRole().name());
+                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUser);
 
             return ResponseEntity.ok(authResponse);
 
@@ -191,8 +197,9 @@ public class AuthController {
             String email = authentication.getName();
             User user = userService.getUserByEmail(email);
             
+            boolean isNewUserMe = orderRepository.countByUserId(user.getId()) == 0;
             AuthResponse authResponse = new AuthResponse(null, user.getId(), user.getEmail(),
-                    user.getFirstName(), user.getLastName(), user.getRole().name());
+                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUserMe);
             
             return ResponseEntity.ok(authResponse);
         } catch (Exception e) {

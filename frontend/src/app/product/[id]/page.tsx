@@ -12,7 +12,8 @@ import ProductReviews from '@/components/product/ProductReviews';
 const ProductDetails = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isNewUser = user?.isNewUser;
   const [quantity, setQuantity] = useState(1);
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -100,8 +101,20 @@ const ProductDetails = () => {
           <div className="flex flex-col space-y-2">
             <div className="flex items-baseline space-x-2">
               <span className="text-gray-400 font-bold text-xl tracking-tighter">ETB</span>
-              <span className="text-6xl font-black text-gray-900 tracking-tighter">{displayPrice}</span>
+              {isNewUser ? (
+                <>
+                  <span className="text-4xl font-black text-gray-400 tracking-tighter line-through">{displayPrice}</span>
+                  <span className="text-6xl font-black text-orange-600 tracking-tighter">{(parseFloat(displayPrice.replace(/,/g, '')) * 0.9).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </>
+              ) : (
+                <span className="text-6xl font-black text-gray-900 tracking-tighter">{displayPrice}</span>
+              )}
             </div>
+            {isNewUser && (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 px-4 py-2 rounded-xl">
+                <span className="text-green-600 font-bold text-sm">🎉 You qualify for a new user discount! Save 10% with code WELCOME10</span>
+              </div>
+            )}
             {quantity > 1 && (
               <div className="flex items-center space-x-2 text-orange-600 font-bold">
                 <span>Subtotal:</span>

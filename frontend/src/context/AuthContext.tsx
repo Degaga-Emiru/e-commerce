@@ -9,6 +9,7 @@ interface User {
   lastName: string;
   role: string;
   phoneNumber?: string;
+  isNewUser?: boolean;
 }
 
 interface AuthContextType {

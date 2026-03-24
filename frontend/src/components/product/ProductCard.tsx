@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ShoppingCart, Star } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 interface Product {
@@ -21,6 +22,8 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   if (!product) return null;
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const isNewUser = user?.isNewUser;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -57,6 +60,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           
           <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-500"></div>
 
+          {isNewUser && (
+            <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-lg uppercase tracking-wider">
+              -10% New User
+            </div>
+          )}
+
           <button
             onClick={handleAddToCart}
             className="absolute bottom-4 right-4 bg-orange-500 text-white p-4 rounded-2xl shadow-xl opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:bg-orange-600 active:scale-95"
@@ -76,7 +85,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             ))}
           </div>
           <h3 className="font-bold text-gray-900 group-hover:text-orange-500 transition-colors line-clamp-1 mb-1">{product.name}</h3>
-          <p className="text-orange-600 font-extrabold text-lg">${displayPrice}</p>
+          {isNewUser ? (
+            <div className="flex items-center gap-2">
+              <p className="text-gray-400 font-bold text-sm line-through">${displayPrice}</p>
+              <p className="text-orange-600 font-extrabold text-lg">${(parseFloat(displayPrice) * 0.9).toFixed(2)}</p>
+            </div>
+          ) : (
+            <p className="text-orange-600 font-extrabold text-lg">${displayPrice}</p>
+          )}
         </div>
       </Link>
     </div>

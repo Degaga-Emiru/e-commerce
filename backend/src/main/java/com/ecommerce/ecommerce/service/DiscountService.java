@@ -9,6 +9,7 @@ import com.ecommerce.ecommerce.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,18 @@ public class DiscountService {
         this.couponRepository = couponRepository;
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
+    }
+
+    @PostConstruct
+    public void init() {
+        if (couponRepository.count() == 0 || couponRepository.findByCode("WELCOME" + newUserDiscountPercentage).isEmpty()) {
+            try {
+                createNewUserWelcomeCoupon();
+                System.out.println("✅ Auto-created New User Welcome Coupon: WELCOME" + newUserDiscountPercentage);
+            } catch (Exception e) {
+                System.err.println("⚠️ Could not auto-create welcome coupon: " + e.getMessage());
+            }
+        }
     }
 
     public DiscountCoupon createCoupon(String code, String name, DiscountType discountType, BigDecimal discountValue,

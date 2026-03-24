@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import Link from 'next/link';
-import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import api from '@/services/api';
+import { useAuth } from '@/context/AuthContext';
 
 const HERO_IMAGES = [
   "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1200",
@@ -52,6 +53,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentHero, setCurrentHero] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const isNewUser = user?.isNewUser;
 
   // Hero Slider Logic
   useEffect(() => {
@@ -144,6 +147,26 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* New User Welcome Banner */}
+      {isNewUser && (
+        <section className="container mx-auto px-6 -mt-16 relative z-30">
+          <div className="bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500 rounded-[2.5rem] p-8 md:p-12 text-white shadow-2xl shadow-orange-500/30 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="bg-white/20 backdrop-blur-sm p-4 rounded-2xl">
+                <Ticket size={36} />
+              </div>
+              <div>
+                <h3 className="text-2xl md:text-3xl font-black tracking-tight">🎉 Welcome! Get 10% OFF</h3>
+                <p className="text-white/90 font-medium mt-1">Use code <span className="font-mono font-black bg-white/20 px-3 py-1 rounded-lg ml-1">WELCOME10</span> on your first order</p>
+              </div>
+            </div>
+            <Link href="/products" className="bg-white text-orange-600 px-10 py-4 rounded-2xl font-black text-lg hover:bg-gray-100 transition-all shadow-xl shrink-0">
+              Shop Now →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* Features */}
       <section className="container mx-auto px-6">

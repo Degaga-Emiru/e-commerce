@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, Package, Settings, LogOut, ChevronRight, MapPin, ArrowLeft, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { User, Package, Settings, LogOut, ChevronRight, MapPin, ArrowLeft, LayoutDashboard, ShieldCheck, Ticket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import AddressSection from '@/components/profile/AddressSection';
@@ -52,6 +52,7 @@ const ProfilePage = () => {
   } else {
     menuItems = [
       { id: 'orders', icon: <Package size={20} />, label: 'My Orders', description: 'Track and manage your orders' },
+      { id: 'coupons', icon: <Ticket size={20} />, label: 'My Coupons', description: 'View active discounts and promotions' },
       { id: 'addresses', icon: <MapPin size={20} />, label: 'My Addresses', description: 'Manage your shipping addresses' },
       { id: 'info', icon: <User size={20} />, label: 'Personal Info', description: 'Update your profile details' },
       { id: 'settings', icon: <Settings size={20} />, label: 'Account Settings', description: 'Manage security and preferences' }
@@ -119,6 +120,8 @@ const ProfilePage = () => {
                     setActiveTab(item.id as any);
                   } else if (item.id === 'orders') {
                     router.push('/profile/orders');
+                  } else if (item.id === 'coupons') {
+                    router.push('/profile/coupons');
                   } else if (item.id === 'seller-dash') {
                     router.push('/seller/dashboard');
                   } else if (item.id === 'admin-dash') {

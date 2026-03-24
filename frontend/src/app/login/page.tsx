@@ -48,7 +48,17 @@ const LoginPage = () => {
       const response = await api.post('/auth/login', { email, password });
       const { token } = response.data;
       
-      login(response.data, token);
+      // Explicitly map user data including isNewUser flag
+      const userData = {
+        id: response.data.id,
+        email: response.data.email,
+        firstName: response.data.firstName,
+        lastName: response.data.lastName,
+        role: response.data.role,
+        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false
+      };
+      
+      login(userData, token);
       toast.success('Welcome back!');
 
       // Role-based redirect

@@ -16,6 +16,7 @@ public class UserDto {
     private Integer totalOrders;
     private Double totalSpent;
     private LocalDateTime lastLogin;
+    private boolean isNewUser;
 
     // Constructors
     public UserDto() {}
@@ -67,6 +68,9 @@ public class UserDto {
 
     public LocalDateTime getLastLogin() { return lastLogin; }
     public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
+    public boolean isNewUser() { return isNewUser; }
+    public void setNewUser(boolean newUser) { isNewUser = newUser; }
 
     // Utility methods
     public String getFullName() {
