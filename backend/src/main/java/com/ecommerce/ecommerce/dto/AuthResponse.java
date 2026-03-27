@@ -60,6 +60,7 @@ public class AuthResponse {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 
+    @JsonProperty("isNewUser")
     public boolean isNewUser() { return isNewUser; }
     public void setNewUser(boolean newUser) { isNewUser = newUser; }
 

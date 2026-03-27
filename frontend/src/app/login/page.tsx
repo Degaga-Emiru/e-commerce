@@ -30,7 +30,16 @@ const LoginPage = () => {
       api.defaults.headers.common['Authorization'] = `Bearer ${jwt}`;
       const response = await api.get('/auth/me');
       
-      login(response.data, jwt);
+      const userData = {
+        id: response.data.id,
+        email: response.data.email,
+        firstName: response.data.firstName,
+        lastName: response.data.lastName,
+        role: response.data.role,
+        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false
+      };
+      
+      login(userData, jwt);
       toast.success('Login successful!');
       router.push('/');
     } catch (error) {

@@ -161,8 +161,8 @@ export default function Home() {
                 <p className="text-white/90 font-medium mt-1">Use code <span className="font-mono font-black bg-white/20 px-3 py-1 rounded-lg ml-1">WELCOME10</span> on your first order</p>
               </div>
             </div>
-            <Link href="/products" className="bg-white text-orange-600 px-10 py-4 rounded-2xl font-black text-lg hover:bg-gray-100 transition-all shadow-xl shrink-0">
-              Shop Now →
+            <Link href="/new-user-deals" className="bg-white text-orange-600 px-10 py-4 rounded-2xl font-black text-lg hover:bg-gray-100 transition-all shadow-xl shrink-0">
+              Claim Your Deals →
             </Link>
           </div>
         </section>

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, User, Search, Menu, BarChart2, Store } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, BarChart2, Store, Ticket, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import NotificationBell from './NotificationBell';
@@ -53,6 +53,22 @@ const Navbar = () => {
                 </Link>
               )}
             </>
+          )}
+
+          {user?.role === 'CUSTOMER' && (
+            <div className="flex items-center space-x-4">
+              {user.isNewUser && (
+                <Link href="/new-user-deals" className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform" title="New User Deals">
+                  <Sparkles size={14} /> New User Deals
+                </Link>
+              )}
+              <Link href="/profile/coupons" className="text-gray-700 hover:text-orange-500 transition-colors relative group" title="My Coupons">
+                <Ticket size={24} />
+                {user.isNewUser && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></span>
+                )}
+              </Link>
+            </div>
           )}
 
           {user?.role !== 'ADMIN' && (
