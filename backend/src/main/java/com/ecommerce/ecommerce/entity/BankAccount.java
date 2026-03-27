@@ -12,7 +12,7 @@ public class BankAccount {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, length = 15)
+    @Column(unique = true, nullable = false, length = 50)
     private String accountNumber;
 
     @Column(nullable = false)
@@ -26,6 +26,12 @@ public class BankAccount {
 
     @Column(nullable = false)
     private String routingNumber = "123456789"; // Identifies the bank
+
+    private String branchName;
+    private String swiftCode;
+
+    @Column(name = "is_main_account")
+    private Boolean isMainAccount = true;
 
     @Column(nullable = false)
     private Boolean active = true;
@@ -95,6 +101,15 @@ public class BankAccount {
 
     public String getRoutingNumber() { return routingNumber; }
     public void setRoutingNumber(String routingNumber) { this.routingNumber = routingNumber; }
+
+    public String getBranchName() { return branchName; }
+    public void setBranchName(String branchName) { this.branchName = branchName; }
+
+    public String getSwiftCode() { return swiftCode; }
+    public void setSwiftCode(String swiftCode) { this.swiftCode = swiftCode; }
+
+    public Boolean isMainAccount() { return isMainAccount; }
+    public void setMainAccount(Boolean isMainAccount) { this.isMainAccount = isMainAccount; }
 
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }

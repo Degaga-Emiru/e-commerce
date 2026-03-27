@@ -1,0 +1,122 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------< com.ecommerce:ecommerce-backend >-------------------
+[INFO] Building Ecommerce Backend 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.5.4:run (default-cli) > test-compile @ ecommerce-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ ecommerce-backend ---
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO] Copying 6 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ ecommerce-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 148 source files with javac [debug parameters release 17] to target\classes
+[WARNING] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/mapper/ProductMapper.java:[19,16] Unmapped target properties: "averageRating, reviewCount".
+[WARNING] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/mapper/ProductMapper.java:[21,23] Unmapped target property: "productId".
+[WARNING] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/mapper/ProductMapper.java:[22,20] Unmapped target properties: "product, createdAt, updatedAt".
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java: D:\E-Commerce\backend\src\main\java\com\ecommerce\ecommerce\config\SecurityConfig.java uses or overrides a deprecated API.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java: Recompile with -Xlint:deprecation for details.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/controller/AdminController.java: Some input files use unchecked or unsafe operations.
+[INFO] /D:/E-Commerce/backend/src/main/java/com/ecommerce/ecommerce/controller/AdminController.java: Recompile with -Xlint:unchecked for details.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ ecommerce-backend ---
+[INFO] skip non existing resourceDirectory D:\E-Commerce\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.13.0:testCompile (default-testCompile) @ ecommerce-backend ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug parameters release 17] to target\test-classes
+[INFO] 
+[INFO] <<< spring-boot:3.5.4:run (default-cli) < test-compile @ ecommerce-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.5.4:run (default-cli) @ ecommerce-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.4)
+
+2026-03-27T13:05:26.167+03:00  INFO 42352 --- [  restartedMain] c.e.ecommerce.ECommerceApplication       : Starting ECommerceApplication using Java 17.0.12 with PID 42352 (D:\E-Commerce\backend\target\classes started by HP in D:\E-Commerce\backend)
+2026-03-27T13:05:26.171+03:00 DEBUG 42352 --- [  restartedMain] c.e.ecommerce.ECommerceApplication       : Running with Spring Boot v3.5.4, Spring v6.2.9
+2026-03-27T13:05:26.171+03:00  INFO 42352 --- [  restartedMain] c.e.ecommerce.ECommerceApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-03-27T13:05:26.241+03:00  INFO 42352 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-03-27T13:05:26.241+03:00  INFO 42352 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-03-27T13:05:27.634+03:00  INFO 42352 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-27T13:05:27.793+03:00  INFO 42352 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 146 ms. Found 20 JPA repository interfaces.
+2026-03-27T13:05:28.614+03:00  INFO 42352 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-03-27T13:05:28.627+03:00  INFO 42352 --- [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-27T13:05:28.630+03:00  INFO 42352 --- [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.43]
+2026-03-27T13:05:28.687+03:00  INFO 42352 --- [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-27T13:05:28.687+03:00  INFO 42352 --- [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2446 ms
+2026-03-27T13:05:28.851+03:00  INFO 42352 --- [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-27T13:05:28.904+03:00  INFO 42352 --- [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.22.Final
+2026-03-27T13:05:28.936+03:00  INFO 42352 --- [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-27T13:05:29.312+03:00  INFO 42352 --- [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-27T13:05:29.346+03:00  INFO 42352 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-27T13:05:29.655+03:00  INFO 42352 --- [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@4d63f73d
+2026-03-27T13:05:29.655+03:00  INFO 42352 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-27T13:05:29.699+03:00  WARN 42352 --- [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-27T13:05:29.724+03:00  INFO 42352 --- [  restartedMain] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 17.5
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-03-27T13:05:31.496+03:00  INFO 42352 --- [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+Hibernate: 
+    alter table if exists bank_accounts 
+       alter column account_number set data type varchar(50)
+2026-03-27T13:05:33.777+03:00  INFO 42352 --- [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-27T13:05:34.228+03:00  INFO 42352 --- [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-27T13:05:35.161+03:00 DEBUG 42352 --- [  restartedMain] c.e.e.security.JwtAuthenticationFilter   : Filter 'jwtAuthenticationFilter' configured for use
+Hibernate: 
+    select
+        ba1_0.id,
+        ba1_0.account_holder_name,
+        ba1_0.account_number,
+        ba1_0.account_type,
+        ba1_0.active,
+        ba1_0.balance,
+        ba1_0.bank_name,
+        ba1_0.branch_name,
+        ba1_0.created_at,
+        ba1_0.is_main_account,
+        ba1_0.routing_number,
+        ba1_0.swift_code,
+        ba1_0.updated_at,
+        ba1_0.user_id 
+    from
+        bank_accounts ba1_0 
+    where
+        ba1_0.account_number=? 
+        and ba1_0.account_type=?
+Hibernate: 
+    select
+        ba1_0.id,
+        ba1_0.account_holder_name,
+        ba1_0.account_number,
+        ba1_0.account_type,
+        ba1_0.active,
+        ba1_0.balance,
+        ba1_0.bank_name,
+        ba1_0.branch_name,
+        ba1_0.created_at,
+        ba1_0.is_main_account,
+        ba1_0.routing_number,
+        ba1_0.swift_code,
+        ba1_0.updated_at,
+        ba1_0.user_id 
+    from
+        bank_accounts ba1_0 
+    where
+        ba1_0.account_number=?

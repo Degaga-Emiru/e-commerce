@@ -94,14 +94,17 @@ export default function SellerProductsPage() {
     setShowForm(true); 
   };
 
-  const s = { minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '2rem', fontFamily: "'Inter', sans-serif" };
-  const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '0.75rem 1rem', color: '#f1f5f9', fontSize: 15, boxSizing: 'border-box' };
+  const s = { padding: '2rem', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Inter', sans-serif" };
+  const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '0.875rem 1rem', color: '#f1f5f9', fontSize: 15, boxSizing: 'border-box', outline: 'none' };
 
   return (
     <div style={s}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 800, color: '#f1f5f9' }}>🛍️ My Products</h1>
+      <div style={{ marginBottom: '2.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, color: '#f1f5f9' }}>Inventory Management</h1>
+            <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>Manage your product listings, variants and stock levels.</p>
+          </div>
           <button onClick={() => { setForm(EMPTY); setEditId(null); setShowForm(p => !p); }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 12, padding: '0.75rem 1.5rem', fontWeight: 700, cursor: 'pointer', fontSize: 15 }}>
             <Plus size={18} /> {showForm ? 'Cancel' : 'Add Product'}
           </button>

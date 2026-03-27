@@ -34,7 +34,7 @@ public class AnalyticsService {
         List<MerchantAnalyticsResponse.ProductSalesData> topProducts = topProductsRaw.stream()
                 .map(row -> {
                     Product product = (Product) row[0];
-                    Long quantitySold = (Long) row[1];
+                    Long quantitySold = ((Number) row[1]).longValue();
                     BigDecimal revenue = (BigDecimal) row[2];
                     return MerchantAnalyticsResponse.ProductSalesData.builder()
                             .productId(product.getId())

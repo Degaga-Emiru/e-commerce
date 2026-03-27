@@ -1,6 +1,6 @@
 package com.ecommerce.ecommerce.entity;
-
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -23,6 +23,28 @@ public class SellerProfile {
 
     @Column(name = "logo_url")
     private String logoUrl;
+
+    @Column(name = "business_address")
+    private String businessAddress;
+
+    @Column(name = "tax_id")
+    private String taxId;
+
+    @Column(name = "business_registration_number")
+    private String businessRegistrationNumber;
+
+    // Notification Toggles
+    @Column(name = "email_new_order")
+    private boolean emailNewOrder = true;
+
+    @Column(name = "email_shipping_update")
+    private boolean emailShippingUpdate = true;
+
+    @Column(name = "email_escrow_release")
+    private boolean emailEscrowRelease = true;
+
+    @Column(name = "available_balance", precision = 15, scale = 2)
+    private BigDecimal availableBalance = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private Boolean verified = false;
@@ -62,6 +84,28 @@ public class SellerProfile {
     public void setDescription(String description) { this.description = description; }
     public String getLogoUrl() { return logoUrl; }
     public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
+    
+    public String getBusinessAddress() { return businessAddress; }
+    public void setBusinessAddress(String businessAddress) { this.businessAddress = businessAddress; }
+    
+    public String getTaxId() { return taxId; }
+    public void setTaxId(String taxId) { this.taxId = taxId; }
+    
+    public String getBusinessRegistrationNumber() { return businessRegistrationNumber; }
+    public void setBusinessRegistrationNumber(String businessRegistrationNumber) { this.businessRegistrationNumber = businessRegistrationNumber; }
+    
+    public boolean isEmailNewOrder() { return emailNewOrder; }
+    public void setEmailNewOrder(boolean emailNewOrder) { this.emailNewOrder = emailNewOrder; }
+    
+    public boolean isEmailShippingUpdate() { return emailShippingUpdate; }
+    public void setEmailShippingUpdate(boolean emailShippingUpdate) { this.emailShippingUpdate = emailShippingUpdate; }
+    
+    public boolean isEmailEscrowRelease() { return emailEscrowRelease; }
+    public void setEmailEscrowRelease(boolean emailEscrowRelease) { this.emailEscrowRelease = emailEscrowRelease; }
+
+    public BigDecimal getAvailableBalance() { return availableBalance; }
+    public void setAvailableBalance(BigDecimal availableBalance) { this.availableBalance = availableBalance; }
+
     public Boolean getVerified() { return verified; }
     public void setVerified(Boolean verified) { this.verified = verified; }
     public LocalDateTime getCreatedAt() { return createdAt; }

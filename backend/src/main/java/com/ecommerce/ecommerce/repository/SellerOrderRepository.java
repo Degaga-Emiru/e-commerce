@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface SellerOrderRepository extends JpaRepository<SellerOrder, Long> {
     List<SellerOrder> findBySeller(User seller);
+    List<SellerOrder> findBySellerId(Long sellerId);
     List<SellerOrder> findByOrderId(Long orderId);
     void deleteByOrderId(Long orderId);
 

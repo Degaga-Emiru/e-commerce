@@ -12,6 +12,8 @@ import com.ecommerce.ecommerce.repository.EscrowRepository;
 import com.ecommerce.ecommerce.repository.OrderRepository;
 import com.ecommerce.ecommerce.repository.SellerOrderRepository;
 import com.ecommerce.ecommerce.repository.PaymentRepository;
+import com.ecommerce.ecommerce.repository.SellerProfileRepository;
+import com.ecommerce.ecommerce.entity.SellerProfile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class EscrowService {
     private final EmailService emailService;
     private final DemoBankService demoBankService;
     private final PaymentRepository paymentRepository;
+    private final SellerProfileRepository sellerProfileRepository;
 
     public EscrowService(EscrowRepository escrowRepository, 
                          OrderRepository orderRepository,
@@ -37,7 +40,8 @@ public class EscrowService {
                          NotificationService notificationService,
                          EmailService emailService,
                          DemoBankService demoBankService,
-                         PaymentRepository paymentRepository) {
+                         PaymentRepository paymentRepository,
+                         SellerProfileRepository sellerProfileRepository) {
         this.escrowRepository = escrowRepository;
         this.orderRepository = orderRepository;
         this.sellerOrderRepository = sellerOrderRepository;
@@ -45,6 +49,7 @@ public class EscrowService {
         this.emailService = emailService;
         this.demoBankService = demoBankService;
         this.paymentRepository = paymentRepository;
+        this.sellerProfileRepository = sellerProfileRepository;
     }
 
     @Transactional
@@ -102,12 +107,16 @@ public class EscrowService {
                     BigDecimal netAmount = grossAmount.subtract(commission);
                     
                     if (so.getSeller().getBankAccount() == null) {
-                        System.err.println("Seller " + so.getSeller().getEmail() + " has no bank account configured. Cannot release funds.");
-                        continue;
+                        System.err.println("Seller " + so.getSeller().getEmail() + " has no bank account configured. Funds will stay in virtual balance.");
                     }
-                    String sellerAccountNumber = so.getSeller().getBankAccount().getAccountNumber();
-                    demoBankService.releaseFundsToSeller(sellerAccountNumber, netAmount);
+                    
+                    // Update Seller's available balance instead of direct bank transfer
+                    SellerProfile profile = sellerProfileRepository.findByUserId(so.getSeller().getId())
+                            .orElseThrow(() -> new RuntimeException("Seller profile not found"));
+                    profile.setAvailableBalance(profile.getAvailableBalance().add(netAmount));
+                    sellerProfileRepository.save(profile);
 
+                    // Record Payment history
                     if (customerPayment != null) {
                         // Record Seller Payout 
                         Payment sellerPayment = new Payment(so.getOrder(), grossAmount, PaymentStatus.COMPLETED, customerPayment.getPaymentMethod());
@@ -115,7 +124,9 @@ public class EscrowService {
                         sellerPayment.setSeller(so.getSeller());
                         sellerPayment.setCommissionAmount(commission);
                         sellerPayment.setNetAmountToSeller(netAmount);
-                        sellerPayment.setSellerAccountNumber(sellerAccountNumber);
+                        if (so.getSeller().getBankAccount() != null) {
+                            sellerPayment.setSellerAccountNumber(so.getSeller().getBankAccount().getAccountNumber());
+                        }
                         paymentRepository.save(sellerPayment);
 
                         // Record Platform Commission

@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.entity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 @Entity
@@ -12,6 +13,7 @@ public class OrderItem {
     // 🔹 The main customer order
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonIgnoreProperties({"orderItems", "user", "customer", "seller"})
     private Order order;
 
     // 🔹 The specific product purchased
@@ -31,6 +33,7 @@ public class OrderItem {
     // 🔹 NEW: the seller-specific sub-order
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_order_id")
+    @JsonIgnoreProperties({"items", "order", "seller"})
     private SellerOrder sellerOrder;
 
     private Integer quantity;

@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.entity;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
@@ -7,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"products", "orders", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
