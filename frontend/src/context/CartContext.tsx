@@ -7,7 +7,10 @@ import { toast } from 'react-hot-toast';
 
 interface CartItem {
   productId: number;
+  variantId?: number;
   name: string;
+  size?: string;
+  color?: string;
   price: number;
   quantity: number;
   image?: string;
@@ -16,8 +19,8 @@ interface CartItem {
 interface CartContextType {
   cart: CartItem[];
   addToCart: (item: CartItem) => Promise<void>;
-  removeFromCart: (productId: number) => Promise<void>;
-  updateQuantity: (productId: number, quantity: number) => Promise<void>;
+  removeFromCart: (productId: number, variantId?: number) => Promise<void>;
+  updateQuantity: (productId: number, quantity: number, variantId?: number) => Promise<void>;
   clearCart: () => Promise<void>;
   cartTotal: number;
   cartCount: number;
@@ -39,7 +42,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await api.get('/cart');
         const backendItems = response.data.data.items.map((item: any) => ({
           productId: item.productId,
+          variantId: item.variantId,
           name: item.productName,
+          size: item.size,
+          color: item.color,
           price: item.unitPrice,
           quantity: item.quantity,
           image: item.productImage
@@ -73,6 +79,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             for (const item of guestItems) {
               await api.post('/cart/items', {
                 productId: item.productId,
+                variantId: item.variantId,
                 quantity: item.quantity
               });
             }
@@ -100,11 +107,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const response = await api.post('/cart/items', {
           productId: item.productId,
+          variantId: item.variantId,
           quantity: item.quantity
         });
         const updatedItems = response.data.data.items.map((i: any) => ({
           productId: i.productId,
+          variantId: i.variantId,
           name: i.productName,
+          size: i.size,
+          color: i.color,
           price: i.unitPrice,
           quantity: i.quantity,
           image: i.productImage
@@ -116,10 +127,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       setCart((prev) => {
-        const existing = prev.find((i) => i.productId === item.productId);
+        const existing = prev.find((i) => i.productId === item.productId && i.variantId === item.variantId);
         if (existing) {
           return prev.map((i) =>
-            i.productId === item.productId ? { ...i, quantity: i.quantity + item.quantity } : i
+            (i.productId === item.productId && i.variantId === item.variantId) ? { ...i, quantity: i.quantity + item.quantity } : i
           );
         }
         return [...prev, item];
@@ -128,27 +139,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const removeFromCart = async (productId: number) => {
+  const removeFromCart = async (productId: number, variantId?: number) => {
     if (isAuthenticated && user?.role === 'CUSTOMER') {
       try {
-        await api.delete(`/cart/items/${productId}`);
-        setCart((prev) => prev.filter((i) => i.productId !== productId));
+        const url = variantId ? `/cart/items/${productId}?variantId=${variantId}` : `/cart/items/${productId}`;
+        await api.delete(url);
+        setCart((prev) => prev.filter((i) => !(i.productId === productId && i.variantId === variantId)));
         toast.success('Removed from cart');
       } catch (error) {
         toast.error('Failed to remove item');
       }
     } else {
-      setCart((prev) => prev.filter((i) => i.productId !== productId));
+      setCart((prev) => prev.filter((i) => !(i.productId === productId && i.variantId === variantId)));
     }
   };
 
-  const updateQuantity = async (productId: number, quantity: number) => {
+  const updateQuantity = async (productId: number, quantity: number, variantId?: number) => {
     if (isAuthenticated && user?.role === 'CUSTOMER') {
       try {
-        const response = await api.put(`/cart/items/${productId}?quantity=${quantity}`);
+        const url = variantId 
+          ? `/cart/items/${productId}?quantity=${quantity}&variantId=${variantId}` 
+          : `/cart/items/${productId}?quantity=${quantity}`;
+        const response = await api.put(url);
         const updatedItems = response.data.data.items.map((i: any) => ({
           productId: i.productId,
+          variantId: i.variantId,
           name: i.productName,
+          size: i.size,
+          color: i.color,
           price: i.unitPrice,
           quantity: i.quantity,
           image: i.productImage
@@ -159,7 +177,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       setCart((prev) =>
-        prev.map((i) => (i.productId === productId ? { ...i, quantity } : i))
+        prev.map((i) => (i.productId === productId && i.variantId === variantId ? { ...i, quantity } : i))
       );
     }
   };

@@ -14,7 +14,14 @@ public class CartMapper {
         dto.setQuantity(item.getQuantity());
         dto.setUnitPrice(item.getUnitPrice());
         dto.setTotalPrice(item.getTotalPrice());
-        dto.setProductImage(item.getProduct().getImageUrl());
+        dto.setProductImage(item.getVariant() != null && item.getVariant().getImageUrl() != null 
+                ? item.getVariant().getImageUrl() : item.getProduct().getImageUrl());
+        
+        if (item.getVariant() != null) {
+            dto.setVariantId(item.getVariant().getId());
+            dto.setSize(item.getVariant().getSize());
+            dto.setColor(item.getVariant().getColor());
+        }
         return dto;
     }
 

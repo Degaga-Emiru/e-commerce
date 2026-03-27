@@ -41,6 +41,10 @@ public class OrderController {
                 .map(itemDto -> {
                     OrderItem item = new OrderItem();
                     item.setProduct(new com.ecommerce.ecommerce.entity.Product(itemDto.getProductId()));
+                    if (itemDto.getVariantId() != null) {
+                        item.setVariant(new com.ecommerce.ecommerce.entity.ProductVariant());
+                        item.getVariant().setId(itemDto.getVariantId());
+                    }
                     item.setQuantity(itemDto.getQuantity());
                     return item;
                 }).toList();

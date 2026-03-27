@@ -7,7 +7,7 @@ import { Plus, Edit2, Trash2, Package, ChevronDown } from 'lucide-react';
 interface Product { id: number; name: string; price: number; stockQuantity: number; imageUrl: string; status: string; }
 interface Category { id: number; name: string; }
 
-const EMPTY = { name: '', description: '', price: '', stockQuantity: '', imageUrl: '', categoryId: '' };
+const EMPTY = { name: '', description: '', price: '', stockQuantity: '', imageUrl: '', categoryId: '', variants: [] as any[] };
 
 export default function SellerProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -36,7 +36,12 @@ export default function SellerProductsPage() {
         ...form, 
         price: parseFloat(form.price), 
         stockQuantity: parseInt(form.stockQuantity || '0'), 
-        categoryId: form.categoryId ? parseInt(form.categoryId) : null 
+        categoryId: form.categoryId ? parseInt(form.categoryId) : null,
+        variants: form.variants.map(v => ({
+          ...v,
+          price: v.price ? parseFloat(v.price) : null,
+          stockQuantity: parseInt(v.stockQuantity || '0')
+        }))
       };
 
       const formData = new FormData();
@@ -71,7 +76,23 @@ export default function SellerProductsPage() {
     catch (e: any) { toast.error(e.response?.data?.message || 'Failed'); }
   };
 
-  const edit = (p: any) => { setForm({ name: p.name, description: p.description || '', price: String(p.price), stockQuantity: String(p.stockQuantity), imageUrl: p.imageUrl || '', categoryId: String(p.category?.id || '') }); setEditId(p.id); setShowForm(true); };
+  const edit = (p: any) => { 
+    setForm({ 
+      name: p.name, 
+      description: p.description || '', 
+      price: String(p.price), 
+      stockQuantity: String(p.stockQuantity), 
+      imageUrl: p.imageUrl || '', 
+      categoryId: String(p.category?.id || ''),
+      variants: p.variants?.map((v: any) => ({
+        ...v,
+        price: v.price ? String(v.price) : '',
+        stockQuantity: String(v.stockQuantity)
+      })) || []
+    }); 
+    setEditId(p.id); 
+    setShowForm(true); 
+  };
 
   const s = { minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '2rem', fontFamily: "'Inter', sans-serif" };
   const inp: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '0.75rem 1rem', color: '#f1f5f9', fontSize: 15, boxSizing: 'border-box' };
@@ -115,6 +136,65 @@ export default function SellerProductsPage() {
               <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>Description</label>
                 <textarea style={{ ...inp, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+              </div>
+
+              {/* Variants Section */}
+              <div style={{ gridColumn: 'span 2', background: 'rgba(255,255,255,0.03)', padding: '1.5rem', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h4 style={{ margin: 0, color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>Product Variants (Sizes/Colors)</h4>
+                    <button 
+                        type="button"
+                        onClick={() => setForm(p => ({ ...p, variants: [...p.variants, { size: '', color: '', sku: '', stockQuantity: '0', price: '' }] }))}
+                        style={{ background: 'rgba(99,102,241,0.1)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)', padding: '0.4rem 0.8rem', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                        + Add Variant
+                    </button>
+                </div>
+                
+                {form.variants.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {form.variants.map((v, i) => (
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.5fr 1fr 1fr auto', gap: '0.5rem', alignItems: 'end', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 12 }}>
+                        <div>
+                          <label style={{ color: '#64748b', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Size</label>
+                          <input style={{ ...inp, padding: '0.5rem' }} value={v.size} onChange={e => { const vn = [...form.variants]; vn[i].size = e.target.value; setForm(p => ({ ...p, variants: vn })); }} placeholder="e.g. XL" />
+                        </div>
+                        <div>
+                          <label style={{ color: '#64748b', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Color</label>
+                          <input style={{ ...inp, padding: '0.5rem' }} value={v.color} onChange={e => { const vn = [...form.variants]; vn[i].color = e.target.value; setForm(p => ({ ...p, variants: vn })); }} placeholder="e.g. Blue" />
+                        </div>
+                        <div>
+                          <label style={{ color: '#64748b', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>SKU (Optional)</label>
+                          <input style={{ ...inp, padding: '0.5rem' }} value={v.sku} onChange={e => { const vn = [...form.variants]; vn[i].sku = e.target.value; setForm(p => ({ ...p, variants: vn })); }} placeholder="BS-001" />
+                        </div>
+                        <div>
+                          <label style={{ color: '#64748b', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Price</label>
+                          <input style={{ ...inp, padding: '0.5rem' }} value={v.price} type="number" onChange={e => { const vn = [...form.variants]; vn[i].price = e.target.value; setForm(p => ({ ...p, variants: vn })); }} placeholder="Optional" />
+                        </div>
+                        <div>
+                          <label style={{ color: '#64748b', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Stock</label>
+                          <input style={{ ...inp, padding: '0.5rem' }} value={v.stockQuantity} type="number" onChange={e => { 
+                            const vn = [...form.variants]; 
+                            vn[i].stockQuantity = e.target.value; 
+                            setForm(p => {
+                              const total = vn.reduce((sum, curr) => sum + parseInt(curr.stockQuantity || '0'), 0);
+                              return { ...p, variants: vn, stockQuantity: String(total) };
+                            }); 
+                          }} />
+                        </div>
+                        <button 
+                            type="button" 
+                            onClick={() => setForm(p => ({ ...p, variants: p.variants.filter((_, idx) => idx !== i) }))}
+                            style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '0.5rem' }}
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#64748b', fontSize: 12, textAlign: 'center', margin: '1rem 0' }}>No variants added. Base price and stock will be used.</p>
+                )}
               </div>
             </div>
             <button onClick={submit} disabled={submitting} style={{ marginTop: '1rem', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '0.75rem 2rem', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', fontSize: 15, opacity: submitting ? 0.7 : 1 }}>

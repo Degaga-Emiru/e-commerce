@@ -31,6 +31,7 @@ public class OrderService {
     private final EscrowService escrowService;
     private final EscrowRepository escrowRepository;
     private final AddressRepository addressRepository;
+    private final ProductVariantRepository variantRepository;
 
 
     public OrderService(OrderRepository orderRepository, OrderItemRepository orderItemRepository,
@@ -41,7 +42,8 @@ public class OrderService {
                         PaymentRepository paymentRepository, ShippingService shippingService,
                         ShippingRepository shippingRepository,
                         EscrowService escrowService, EscrowRepository escrowRepository,
-                        AddressRepository addressRepository) {
+                        AddressRepository addressRepository,
+                        ProductVariantRepository variantRepository) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.userRepository = userRepository;
@@ -58,6 +60,7 @@ public class OrderService {
         this.escrowService = escrowService;
         this.escrowRepository = escrowRepository;
         this.addressRepository = addressRepository;
+        this.variantRepository = variantRepository;
     }
     @Transactional
     public Order createOrder(Long userId, List<OrderItem> orderItems,
@@ -116,27 +119,37 @@ public class OrderService {
             Product product = productRepository.findById(item.getProduct().getId())
                     .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-            Optional<CartItem> cartItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
+            Long variantId = item.getVariant() != null ? item.getVariant().getId() : null;
+            ProductVariant variant = null;
+            if (variantId != null) {
+                variant = variantRepository.findById(variantId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + variantId));
+            }
+
+            Optional<CartItem> cartItemOpt = cartItemRepository.findByCartIdAndProductIdAndVariantId(cart.getId(), product.getId(), variantId);
             if (cartItemOpt.isEmpty()) {
-                throw new RuntimeException("Product " + product.getName() + " is not in the cart.");
+                throw new RuntimeException("Product " + product.getName() + (variant != null ? " (" + variant.getSize() + "/" + variant.getColor() + ")" : "") + " is not in the cart.");
             }
 
             CartItem cartItem = cartItemOpt.get();
             if (item.getQuantity() > cartItem.getQuantity()) {
                 throw new RuntimeException("You only have " + cartItem.getQuantity() +
-                        " units of " + product.getName() + " in your cart.");
+                        " units of this item in your cart.");
             }
 
-            if (product.getStockQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            int availableStock = (variant != null) ? variant.getStockQuantity() : product.getStockQuantity();
+            if (availableStock < item.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for: " + product.getName());
             }
 
-            // ✅ Build a fresh OrderItem (no direct link to CartItem)
+            // ✅ Build a fresh OrderItem
             OrderItem newItem = new OrderItem();
             newItem.setProduct(product);
+            newItem.setVariant(variant);
             newItem.setQuantity(item.getQuantity());
-            newItem.setUnitPrice(product.getPrice());
-            newItem.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+            BigDecimal unitPrice = (variant != null && variant.getPrice() != null) ? variant.getPrice() : product.getPrice();
+            newItem.setUnitPrice(unitPrice);
+            newItem.setTotalPrice(unitPrice.multiply(BigDecimal.valueOf(item.getQuantity())));
             newItem.setOrder(order);
 
             totalAmount = totalAmount.add(newItem.getTotalPrice());
@@ -154,7 +167,7 @@ public class OrderService {
             sellerOrderMap.computeIfAbsent(seller.getId(), s -> new ArrayList<>()).add(newItem);
 
             // Update stock
-            updateProductStock(product.getId(), item.getQuantity());
+            updateProductStock(product.getId(), variantId, item.getQuantity());
 
             preparedItems.add(newItem);
             purchasedCartItems.add(cartItem); // ✅ track purchased cart items
@@ -320,7 +333,7 @@ public class OrderService {
 
         // Restore product stock
         for (OrderItem item : order.getOrderItems()) {
-            restoreProductStock(item.getProduct().getId(), item.getQuantity());
+            restoreProductStock(item.getProduct().getId(), item.getVariant() != null ? item.getVariant().getId() : null, item.getQuantity());
         }
 
         return orderRepository.save(order);
@@ -366,14 +379,23 @@ public class OrderService {
         return orderCount == 0;
     }
 
-    private void updateProductStock(Long productId, Integer quantity) {
+    private void updateProductStock(Long productId, Long variantId, Integer quantity) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
         
-        int newStock = product.getStockQuantity() - quantity;
-        product.setStockQuantity(newStock);
+        if (variantId != null) {
+            ProductVariant variant = variantRepository.findById(variantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found"));
+            variant.setStockQuantity(variant.getStockQuantity() - quantity);
+            variantRepository.save(variant);
+            
+            // Also update total product stock
+            product.setStockQuantity(product.getVariants().stream().mapToInt(ProductVariant::getStockQuantity).sum());
+        } else {
+            product.setStockQuantity(product.getStockQuantity() - quantity);
+        }
 
-        if (newStock <= 0) {
+        if (product.getStockQuantity() <= 0) {
             product.setStockQuantity(0);
             product.setStatus(ProductStatus.OUT_OF_STOCK);
         }
@@ -381,20 +403,30 @@ public class OrderService {
         productRepository.save(product);
 
         // Send alert if stock is low (e.g., < 5)
-        if (newStock < 5 && product.getSeller() != null) {
+        if (product.getStockQuantity() < 5 && product.getSeller() != null) {
             emailService.sendLowStockAlert(
                 product.getSeller().getEmail(),
                 product.getSeller().getFirstName(),
                 product.getName(),
-                newStock
+                product.getStockQuantity()
             );
         }
     }
 
-    private void restoreProductStock(Long productId, Integer quantity) {
+    private void restoreProductStock(Long productId, Long variantId, Integer quantity) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-        product.setStockQuantity(product.getStockQuantity() + quantity);
+        
+        if (variantId != null) {
+            ProductVariant variant = variantRepository.findById(variantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found"));
+            variant.setStockQuantity(variant.getStockQuantity() + quantity);
+            variantRepository.save(variant);
+            product.setStockQuantity(product.getVariants().stream().mapToInt(ProductVariant::getStockQuantity).sum());
+        } else {
+            product.setStockQuantity(product.getStockQuantity() + quantity);
+        }
+        
         if (product.getStockQuantity() > 0 && product.getStatus() == ProductStatus.OUT_OF_STOCK) {
             product.setStatus(ProductStatus.ACTIVE);
         }

@@ -31,35 +31,42 @@ const CartPage = () => {
         {/* Cart Items */}
         <div className="lg:w-2/3 space-y-6">
           {cart.map((item) => (
-            <div key={item.productId} className="flex items-center justify-between border-b pb-6">
+            <div key={`${item.productId}-${item.variantId || 'base'}`} className="flex items-center justify-between border-b pb-6">
               <div className="flex items-center space-x-4">
                 <div className="w-24 h-24 bg-gray-100 rounded-md overflow-hidden">
                   <img src={item.image || 'https://via.placeholder.com/150'} alt={item.name} className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{item.name}</h3>
-                  <p className="text-orange-600 font-bold">${item.price.toFixed(2)}</p>
+                  {(item.size || item.color) && (
+                    <p className="text-gray-500 text-sm">
+                      {item.size && <span>Size: {item.size}</span>}
+                      {item.size && item.color && <span className="mx-2">|</span>}
+                      {item.color && <span>Color: {item.color}</span>}
+                    </p>
+                  )}
+                  <p className="text-orange-600 font-bold">${item.price.toLocaleString()}</p>
                 </div>
               </div>
 
               <div className="flex items-center space-x-6">
                 <div className="flex items-center border border-gray-300 rounded-md">
                   <button 
-                    onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                    onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1), item.variantId)}
                     className="p-2 hover:text-orange-500"
                   >
                     <Minus size={16} />
                   </button>
                   <span className="px-4 font-bold">{item.quantity}</span>
                   <button 
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
                     className="p-2 hover:text-orange-500"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
                 <button 
-                  onClick={() => removeFromCart(item.productId)}
+                  onClick={() => removeFromCart(item.productId, item.variantId)}
                   className="text-gray-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 size={20} />

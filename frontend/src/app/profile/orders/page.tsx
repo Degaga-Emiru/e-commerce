@@ -17,7 +17,7 @@ interface Order {
   paymentStatus: string;
   finalAmount: number;
   orderDate: string;
-  orderItems: { productId?: number; productName?: string; quantity: number; price: number; productImage?: string }[];
+  orderItems: { productId?: number; productName?: string; quantity: number; price: number; productImage?: string; size?: string; color?: string; }[];
   shippingAddress?: { recipientName?: string; street: string; city: string; state: string; zipCode: string; country: string; phoneNumber?: string };
   shipping?: { carrier?: string; trackingNumber?: string };
 }
@@ -157,7 +157,12 @@ export default function OrderHistoryPage() {
                                 <div key={i} style={{ display:'flex', justifyContent:'space-between', padding:'0.75rem 0', borderBottom:'1px solid rgba(255,255,255,0.03)' }}>
                                     <div style={{ display:'flex', flexDirection:'column' }}>
                                         <span style={{ color:'#f1f5f9', fontSize:14, fontWeight:600 }}>{item.productName || 'Product'}</span>
-                                        <span style={{ color:'#64748b', fontSize:12 }}>Qty: {item.quantity}</span>
+                                        {(item.size || item.color) && (
+                                            <span style={{ color:'#94a3b8', fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.05em', marginTop:2 }}>
+                                                {item.size} {item.size && item.color && '/'} {item.color}
+                                            </span>
+                                        )}
+                                        <span style={{ color:'#64748b', fontSize:12, marginTop:4 }}>Qty: {item.quantity}</span>
                                     </div>
                                     <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap: 6 }}>
                                         <span style={{ color:'#cbd5e1', fontSize:14, fontWeight:700 }}>ETB {(item.price * item.quantity).toLocaleString()}</span>

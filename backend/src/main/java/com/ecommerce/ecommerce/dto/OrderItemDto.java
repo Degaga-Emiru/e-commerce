@@ -13,6 +13,9 @@ public class OrderItemDto {
     private BigDecimal totalPrice;
     private String productDescription;
     private String productCategory;
+    private Long variantId;
+    private String size;
+    private String color;
 
     // Constructors
     public OrderItemDto() {}
@@ -68,6 +71,15 @@ public class OrderItemDto {
 
     public String getProductCategory() { return productCategory; }
     public void setProductCategory(String productCategory) { this.productCategory = productCategory; }
+
+    public Long getVariantId() { return variantId; }
+    public void setVariantId(Long variantId) { this.variantId = variantId; }
+
+    public String getSize() { return size; }
+    public void setSize(String size) { this.size = size; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 
     // Utility methods
     public void increaseQuantity(Integer additionalQuantity) {

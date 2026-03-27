@@ -1,6 +1,8 @@
 package com.ecommerce.ecommerce.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 public class ProductDto {
     private Long id;
@@ -18,6 +20,7 @@ public class ProductDto {
     private LocalDateTime updatedAt;
     private Double averageRating;
     private Integer reviewCount;
+    private List<ProductVariantDto> variants = new ArrayList<>();
 
     public ProductDto() {}
 
@@ -66,4 +69,7 @@ public class ProductDto {
 
     public Integer getReviewCount() { return reviewCount; }
     public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
+
+    public List<ProductVariantDto> getVariants() { return variants; }
+    public void setVariants(List<ProductVariantDto> variants) { this.variants = variants; }
 }

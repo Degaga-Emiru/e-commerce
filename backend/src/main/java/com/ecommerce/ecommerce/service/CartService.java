@@ -8,6 +8,8 @@ import com.ecommerce.ecommerce.repository.CartRepository;
 import com.ecommerce.ecommerce.repository.CartItemRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
 import com.ecommerce.ecommerce.repository.ProductRepository;
+import com.ecommerce.ecommerce.repository.ProductVariantRepository;
+import com.ecommerce.ecommerce.entity.ProductVariant;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
@@ -21,13 +23,16 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
 
     public CartService(CartRepository cartRepository, CartItemRepository cartItemRepository,
-                       UserRepository userRepository, ProductRepository productRepository) {
+                       UserRepository userRepository, ProductRepository productRepository,
+                       ProductVariantRepository variantRepository) {
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
+        this.variantRepository = variantRepository;
     }
 
     public Cart getOrCreateCart(Long userId) {
@@ -44,7 +49,7 @@ public class CartService {
                 });
     }
 
-    public CartItem addItemToCart(Long userId, Long productId, Integer quantity) {
+    public CartItem addItemToCart(Long userId, Long productId, Long variantId, Integer quantity) {
         if (quantity <= 0) {
             throw new RuntimeException("Quantity must be greater than 0");
         }
@@ -53,11 +58,21 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + productId));
 
-        if (product.getStockQuantity() < quantity) {
-            throw new RuntimeException("Insufficient stock for product: " + product.getName());
+        ProductVariant variant = null;
+        if (variantId != null) {
+            variant = variantRepository.findById(variantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + variantId));
+        } else if (product.getVariants() != null && !product.getVariants().isEmpty()) {
+            throw new RuntimeException("Please select a size/color for this product");
         }
 
-        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId);
+        // Validate stock
+        int availableStock = (variant != null) ? variant.getStockQuantity() : product.getStockQuantity();
+        if (availableStock < quantity) {
+            throw new RuntimeException("Insufficient stock");
+        }
+
+        Optional<CartItem> existingItem = cartItemRepository.findByCartIdAndProductIdAndVariantId(cart.getId(), productId, variantId);
 
         CartItem cartItem;
         if (existingItem.isPresent()) {
@@ -67,8 +82,9 @@ public class CartService {
             cartItem = new CartItem();
             cartItem.setCart(cart);
             cartItem.setProduct(product);
+            cartItem.setVariant(variant);
             cartItem.setQuantity(quantity);
-            cartItem.setUnitPrice(product.getPrice());
+            cartItem.setUnitPrice((variant != null && variant.getPrice() != null) ? variant.getPrice() : product.getPrice());
         }
 
         // 🔹 always recalc total price per item
@@ -81,24 +97,31 @@ public class CartService {
         return cartItem;
     }
 
-    public void updateCartItemQuantity(Long userId, Long productId, Integer quantity) {
+    public void updateCartItemQuantity(Long userId, Long productId, Long variantId, Integer quantity) {
         Cart cart = getOrCreateCart(userId);
-        CartItem item = cartItemRepository.findByCartIdAndProductId(cart.getId(), productId)
+        CartItem item = cartItemRepository.findByCartIdAndProductIdAndVariantId(cart.getId(), productId, variantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found in cart"));
 
         if (quantity <= 0) {
-            removeItemFromCart(userId, productId);
+            removeItemFromCart(userId, productId, variantId);
             return;
         }
 
-        if (item.getProduct().getStockQuantity() < quantity) {
-            throw new RuntimeException("Insufficient stock for product: " + item.getProduct().getName());
+        int availableStock = (item.getVariant() != null) ? item.getVariant().getStockQuantity() : item.getProduct().getStockQuantity();
+        if (availableStock < quantity) {
+            throw new RuntimeException("Insufficient stock");
         }
 
         item.setQuantity(quantity);
         item.setTotalPrice(item.getUnitPrice().multiply(BigDecimal.valueOf(quantity)));
         cartItemRepository.save(item);
 
+        updateCartTotals(cart);
+    }
+
+    public void removeItemFromCart(Long userId, Long productId, Long variantId) {
+        Cart cart = getOrCreateCart(userId);
+        cartItemRepository.deleteByCartIdAndProductIdAndVariantId(cart.getId(), productId, variantId);
         updateCartTotals(cart);
     }
 
@@ -153,10 +176,8 @@ public class CartService {
         List<CartItem> items = getCartItems(userId);
 
         for (CartItem item : items) {
-            Product product = productRepository.findById(item.getProduct().getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-            if (product.getStockQuantity() < item.getQuantity()) {
+            int availableStock = (item.getVariant() != null) ? item.getVariant().getStockQuantity() : item.getProduct().getStockQuantity();
+            if (availableStock < item.getQuantity()) {
                 return false;
             }
         }
@@ -172,7 +193,9 @@ public class CartService {
         List<CartItem> sourceItems = cartItemRepository.findByCartId(sourceCart.getId());
 
         for (CartItem sourceItem : sourceItems) {
-            addItemToCart(targetUserId, sourceItem.getProduct().getId(), sourceItem.getQuantity());
+            addItemToCart(targetUserId, sourceItem.getProduct().getId(), 
+                         sourceItem.getVariant() != null ? sourceItem.getVariant().getId() : null, 
+                         sourceItem.getQuantity());
         }
 
         clearCart(sourceUserId);

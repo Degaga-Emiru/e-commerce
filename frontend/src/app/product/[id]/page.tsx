@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Minus, Plus, Loader2 } from 'lucide-react';
@@ -18,6 +18,10 @@ const ProductDetails = () => {
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [canReview, setCanReview] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const variantSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -45,14 +49,53 @@ const ProductDetails = () => {
     if (id) fetchProduct();
   }, [id, isAuthenticated]);
 
+  useEffect(() => {
+    if (product?.variants?.length > 0) {
+      if (!selectedSize && !selectedColor) {
+        setSelectedVariant(null);
+        return;
+      }
+      
+      const variant = product.variants.find((v: any) => {
+        const sizeMatch = !selectedSize || v.size === selectedSize;
+        const colorMatch = !selectedColor || v.color === selectedColor;
+        // Strict match: if size exists in variants, it must be selected
+        const exactMatch = (selectedSize ? v.size === selectedSize : true) && 
+                           (selectedColor ? v.color === selectedColor : true);
+        return exactMatch;
+      });
+      
+      // Only set variant if it's a complete match for what's picked
+      // If product has both size/color, both must be picked to get a variant
+      const hasSizeInVariants = product.variants.some((v: any) => v.size);
+      const hasColorInVariants = product.variants.some((v: any) => v.color);
+      
+      if ((hasSizeInVariants && !selectedSize) || (hasColorInVariants && !selectedColor)) {
+        setSelectedVariant(null);
+      } else {
+        setSelectedVariant(variant);
+      }
+    }
+  }, [selectedSize, selectedColor, product]);
+
   const handleAddToCart = () => {
     if (!product) return;
+    
+    if (product.variants?.length > 0 && !selectedVariant) {
+      toast.error('Please select size and color options first');
+      variantSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
     addToCart({
       productId: product.id,
+      variantId: selectedVariant?.id,
       name: product.name || product.title,
-      price: product.price,
+      size: selectedVariant?.size,
+      color: selectedVariant?.color,
+      price: selectedVariant?.price || product.price,
       quantity: quantity,
-      image: product.imageUrl || product.image
+      image: selectedVariant?.imageUrl || product.imageUrl || product.image
     });
     toast.success(`${quantity} item(s) added to cart!`);
   };
@@ -65,8 +108,12 @@ const ProductDetails = () => {
 
   if (!product) return <div className="p-20 text-center text-xl font-bold text-gray-400">Product not found</div>;
 
-  const displayPrice = product.price?.toLocaleString() || '0.00';
-  const displayImage = product.imageUrl || product.image || 'https://via.placeholder.com/800';
+  const currentPrice = selectedVariant?.price || product.price || 0;
+  const displayPrice = currentPrice.toLocaleString() || '0.00';
+  const displayImage = selectedVariant?.imageUrl || product.imageUrl || product.image || 'https://via.placeholder.com/800';
+
+  const availableSizes = Array.from(new Set(product.variants?.map((v: any) => v.size).filter(Boolean))) as string[];
+  const availableColors = Array.from(new Set(product.variants?.map((v: any) => v.color).filter(Boolean))) as string[];
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -104,7 +151,7 @@ const ProductDetails = () => {
               {isNewUser ? (
                 <>
                   <span className="text-4xl font-black text-gray-400 tracking-tighter line-through">{displayPrice}</span>
-                  <span className="text-6xl font-black text-orange-600 tracking-tighter">{(parseFloat(displayPrice.replace(/,/g, '')) * 0.9).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                  <span className="text-6xl font-black text-orange-600 tracking-tighter">{(currentPrice * 0.9).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                 </>
               ) : (
                 <span className="text-6xl font-black text-gray-900 tracking-tighter">{displayPrice}</span>
@@ -126,6 +173,60 @@ const ProductDetails = () => {
           <p className="text-gray-500 leading-relaxed text-lg font-medium">
             {product.description}
           </p>
+
+          {/* Variants Selection */}
+          <div ref={variantSectionRef} className="space-y-6 py-6 scroll-mt-20">
+            {availableSizes.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Select Size</span>
+                <div className="flex flex-wrap gap-3">
+                  {availableSizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                        selectedSize === size 
+                          ? 'bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200' 
+                          : 'bg-white text-gray-600 border-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {availableColors.length > 0 && (
+              <div className="space-y-3">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Select Color</span>
+                <div className="flex flex-wrap gap-3">
+                  {availableColors.map(color => (
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all border ${
+                        selectedColor === color 
+                          ? 'bg-gray-900 text-white border-gray-900 shadow-lg shadow-gray-200' 
+                          : 'bg-white text-gray-600 border-gray-100 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full border border-gray-200" style={{ backgroundColor: color.toLowerCase() }}></span>
+                        {color}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedVariant && (
+              <div className="text-xs font-bold text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-100 inline-block">
+                ✓ {selectedVariant.stockQuantity} units available in {selectedVariant.size} / {selectedVariant.color}
+              </div>
+            )}
+          </div>
 
           <div className="space-y-4 pt-8 border-t border-gray-100">
             <div className="flex flex-col sm:flex-row items-center gap-6">

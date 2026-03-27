@@ -19,6 +19,10 @@ public class OrderItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "variant_id")
+    private ProductVariant variant;
+
     // 🔹 The seller who owns this product
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "seller_id", nullable = false)
@@ -40,9 +44,10 @@ public class OrderItem {
     // 🔹 Constructors
     public OrderItem() {}
 
-    public OrderItem(Order order, Product product, User seller, SellerOrder sellerOrder, Integer quantity, BigDecimal unitPrice) {
+    public OrderItem(Order order, Product product, ProductVariant variant, User seller, SellerOrder sellerOrder, Integer quantity, BigDecimal unitPrice) {
         this.order = order;
         this.product = product;
+        this.variant = variant;
        // this.seller = seller;
         this.sellerOrder = sellerOrder;
         this.quantity = quantity;
@@ -59,6 +64,9 @@ public class OrderItem {
 
     public Product getProduct() { return product; }
     public void setProduct(Product product) { this.product = product; }
+
+    public ProductVariant getVariant() { return variant; }
+    public void setVariant(ProductVariant variant) { this.variant = variant; }
 
     //public User getSeller() { return seller; }
     //public void setSeller(User seller) { this.seller = seller; }

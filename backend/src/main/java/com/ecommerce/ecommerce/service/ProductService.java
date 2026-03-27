@@ -1,6 +1,8 @@
 package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.dto.ProductDto;
+import com.ecommerce.ecommerce.dto.ProductVariantDto;
 import com.ecommerce.ecommerce.entity.Product;
+import com.ecommerce.ecommerce.entity.ProductVariant;
 import com.ecommerce.ecommerce.entity.ProductStatus;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.Category;
@@ -142,6 +144,22 @@ public class ProductService {
             product.setImageUrl(imageUrl);
         }
 
+        // Handle Variants
+        if (productDto.getVariants() != null && !productDto.getVariants().isEmpty()) {
+            List<ProductVariant> variants = productDto.getVariants().stream()
+                    .map(vDto -> {
+                        ProductVariant v = productMapper.toVariantEntity(vDto);
+                        v.setProduct(product);
+                        return v;
+                    })
+                    .collect(Collectors.toList());
+            product.setVariants(variants);
+            
+            // Auto-calculate total stock from variants
+            int totalStock = variants.stream().mapToInt(ProductVariant::getStockQuantity).sum();
+            product.setStockQuantity(totalStock);
+        }
+
         Product savedProduct = productRepository.save(product);
         try { emailService.sendNewProductNotification(savedProduct); } catch (Exception ignored) {}
 
@@ -183,6 +201,47 @@ public class ProductService {
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = fileStorageService.storeFile(imageFile);
             existingProduct.setImageUrl(imageUrl);
+        }
+
+        // Handle Variants Update
+        if (productDto.getVariants() != null) {
+            List<ProductVariant> currentVariants = existingProduct.getVariants();
+            List<ProductVariantDto> newVariantDtos = productDto.getVariants();
+            
+            // 1. Remove variants not in the new list
+            List<Long> newVariantIds = newVariantDtos.stream()
+                    .map(ProductVariantDto::getId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toList());
+            
+            currentVariants.removeIf(v -> !newVariantIds.contains(v.getId()));
+            
+            // 2. Update or Add variants
+            for (ProductVariantDto vDto : newVariantDtos) {
+                if (vDto.getId() != null) {
+                    // Update existing
+                    currentVariants.stream()
+                            .filter(v -> v.getId().equals(vDto.getId()))
+                            .findFirst()
+                            .ifPresent(v -> {
+                                v.setSize(vDto.getSize());
+                                v.setColor(vDto.getColor());
+                                v.setSku(vDto.getSku());
+                                v.setStockQuantity(vDto.getStockQuantity());
+                                v.setPrice(vDto.getPrice());
+                                v.setImageUrl(vDto.getImageUrl());
+                            });
+                } else {
+                    // Add new
+                    ProductVariant v = productMapper.toVariantEntity(vDto);
+                    v.setProduct(existingProduct);
+                    currentVariants.add(v);
+                }
+            }
+            
+            // Auto-calculate total stock from variants
+            int totalStock = currentVariants.stream().mapToInt(ProductVariant::getStockQuantity).sum();
+            existingProduct.setStockQuantity(totalStock);
         }
 
         Product updatedProduct = productRepository.save(existingProduct);

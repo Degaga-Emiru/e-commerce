@@ -84,6 +84,7 @@ const CheckoutPage = () => {
         userId: user?.id,
         items: cart.map(item => ({
           productId: item.productId,
+          variantId: item.variantId,
           quantity: item.quantity
         })),
         couponCode: couponApplied ? couponCode : undefined,
@@ -243,8 +244,16 @@ const CheckoutPage = () => {
             
             <div className="space-y-4 mb-8">
               {cart.map((item) => (
-                <div key={item.productId} className="flex justify-between text-sm">
-                  <span className="text-gray-500">{item.name} <span className="text-gray-400 font-bold ml-1">x{item.quantity}</span></span>
+                <div key={`${item.productId}-${item.variantId || 'base'}`} className="flex justify-between text-sm py-2">
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 font-bold">{item.name}</span>
+                    {(item.size || item.color) && (
+                      <span className="text-gray-400 text-[10px] uppercase font-black tracking-widest">
+                        {item.size} {item.size && item.color && '/'} {item.color}
+                      </span>
+                    )}
+                    <span className="text-gray-400 font-bold">Qty: {item.quantity}</span>
+                  </div>
                   <span className="font-bold text-gray-900">ETB {(item.price * item.quantity).toLocaleString()}</span>
                 </div>
               ))}

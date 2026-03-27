@@ -1,7 +1,9 @@
 // ProductMapper.java
 package com.ecommerce.ecommerce.mapper;
 import com.ecommerce.ecommerce.dto.ProductDto;
+import com.ecommerce.ecommerce.dto.ProductVariantDto;
 import com.ecommerce.ecommerce.entity.Product;
+import com.ecommerce.ecommerce.entity.ProductVariant;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import java.util.List;
@@ -15,6 +17,9 @@ public interface ProductMapper {
     @Mapping(target = "sellerName", expression = "java(product.getSeller() != null ? product.getSeller().getFirstName() + \" \" + product.getSeller().getLastName() : \"Unknown Seller\")")
     @Mapping(target = "status", source = "status")
     ProductDto toDto(Product product);
+
+    ProductVariantDto toVariantDto(ProductVariant variant);
+    ProductVariant toVariantEntity(ProductVariantDto variantDto);
 
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "seller", ignore = true)

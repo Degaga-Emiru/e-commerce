@@ -46,7 +46,7 @@ public class CartController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(auth);
 
-        CartItem item = cartService.addItemToCart(userId, request.getProductId(), request.getQuantity());
+        CartItem item = cartService.addItemToCart(userId, request.getProductId(), request.getVariantId(), request.getQuantity());
         Cart cart = cartService.getOrCreateCart(userId);
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Item added to cart", CartMapper.toCartResponse(cart)));
@@ -68,11 +68,12 @@ public class CartController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<ApiResponse<CartResponse>> updateCartItem(
             @PathVariable Long productId,
+            @RequestParam(required = false) Long variantId,
             @RequestParam Integer quantity) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(auth);
 
-        cartService.updateCartItemQuantity(userId, productId, quantity);
+        cartService.updateCartItemQuantity(userId, productId, variantId, quantity);
         Cart cart = cartService.getOrCreateCart(userId);
 
         return ResponseEntity.ok(new ApiResponse<>(true, "Cart updated", CartMapper.toCartResponse(cart)));
@@ -81,11 +82,13 @@ public class CartController {
     // ✅ Remove item from cart
     @DeleteMapping("/items/{productId}")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<ApiResponse<String>> removeCartItem(@PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<String>> removeCartItem(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long variantId) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Long userId = getCurrentUserId(auth);
 
-        cartService.removeItemFromCart(userId, productId);
+        cartService.removeItemFromCart(userId, productId, variantId);
         return ResponseEntity.ok(new ApiResponse<>(true, "Item removed from cart", null));
     }
 

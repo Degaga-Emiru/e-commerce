@@ -10,6 +10,9 @@ public class CartItemResponse {
     private BigDecimal unitPrice;
     private BigDecimal totalPrice;
     private String productImage;
+    private Long variantId;
+    private String size;
+    private String color;
 
     // getters and setters
     public Long getId() { return id; }
@@ -32,4 +35,13 @@ public class CartItemResponse {
 
     public String getProductImage() { return productImage; }
     public void setProductImage(String productImage) { this.productImage = productImage; }
+
+    public Long getVariantId() { return variantId; }
+    public void setVariantId(Long variantId) { this.variantId = variantId; }
+
+    public String getSize() { return size; }
+    public void setSize(String size) { this.size = size; }
+
+    public String getColor() { return color; }
+    public void setColor(String color) { this.color = color; }
 }
