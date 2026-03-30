@@ -38,7 +38,7 @@ public class SellerDashboardService {
                 .count();
 
         BigDecimal revenue = orders.stream()
-                .map(SellerOrder::getPayoutAmount)
+                .map(o -> o.getPayoutAmount() != null ? o.getPayoutAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Available Balance from Profile
@@ -52,13 +52,13 @@ public class SellerDashboardService {
         // For now, we'll sum the payoutAmount of SellerOrders that are NOT yet PAID/RELEASED.
         BigDecimal escrowBalance = orders.stream()
                 .filter(o -> o.getStatus() != SellerOrderStatus.PAYOUT_RELEASED)
-                .map(SellerOrder::getPayoutAmount)
+                .map(o -> o.getPayoutAmount() != null ? o.getPayoutAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         stats.put("totalProducts", totalProducts);
         stats.put("totalOrders", totalOrders);
         stats.put("pendingOrders", pendingOrders);
-        stats.put("revenue", revenue);
+        stats.put("totalRevenue", revenue);
         stats.put("availableBalance", availableBalance);
         stats.put("escrowBalance", escrowBalance);
 
@@ -79,7 +79,7 @@ public class SellerDashboardService {
                     Map<String, Object> dayData = new HashMap<>();
                     dayData.put("date", entry.getKey().toString());
                     dayData.put("sales", entry.getValue().stream()
-                            .map(SellerOrder::getPayoutAmount)
+                            .map(o -> o.getPayoutAmount() != null ? o.getPayoutAmount() : BigDecimal.ZERO)
                             .reduce(BigDecimal.ZERO, BigDecimal::add));
                     return dayData;
                 })

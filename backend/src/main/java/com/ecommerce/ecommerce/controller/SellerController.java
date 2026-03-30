@@ -1,6 +1,7 @@
 package com.ecommerce.ecommerce.controller;
 
 import com.ecommerce.ecommerce.dto.ProductDto;
+import com.ecommerce.ecommerce.dto.SellerOrderDto;
 import com.ecommerce.ecommerce.entity.*;
 import com.ecommerce.ecommerce.service.*;
 import com.ecommerce.ecommerce.util.SecurityUtils;
@@ -66,7 +67,7 @@ public class SellerController {
 
     // ── Orders ───────────────────────────────────────────────────────────────
     @GetMapping("/orders")
-    public ResponseEntity<List<Order>> getMyOrders() {
+    public ResponseEntity<List<SellerOrderDto>> getMyOrders() {
         Long userId = getCurrentUserId();
         return ResponseEntity.ok(orderService.getOrdersBySeller(userId));
     }

@@ -35,9 +35,9 @@ export default function SellerWithdrawalsPage() {
   const fetchData = async () => {
     try {
       const [statsRes, historyRes, settingsRes] = await Promise.all([
-        api.get('/api/seller/dashboard/summary'),
-        api.get('/api/seller/withdrawals/history'),
-        api.get('/api/seller/settings')
+        api.get('/seller/dashboard/summary'),
+        api.get('/seller/withdrawals/history'),
+        api.get('/seller/settings')
       ]);
       setBalance(statsRes.data?.data?.availableBalance || 0);
       setHistory(historyRes.data?.data || []);
@@ -60,7 +60,7 @@ export default function SellerWithdrawalsPage() {
 
     setSubmitting(true);
     try {
-      await api.post('/api/seller/withdrawals/request', { amount: val });
+      await api.post('/seller/withdrawals/request', { amount: val });
       toast.success('Withdrawal request submitted!');
       setAmount('');
       fetchData();

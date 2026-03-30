@@ -3,6 +3,9 @@ import com.ecommerce.ecommerce.entity.*;
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.ecommerce.repository.*;
 import com.ecommerce.ecommerce.dto.ShippingAddressDto;
+import com.ecommerce.ecommerce.dto.SellerOrderDto;
+import com.ecommerce.ecommerce.dto.UserDto;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -197,6 +200,12 @@ public class OrderService {
                     .map(OrderItem::getTotalPrice)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             sellerOrder.setSubtotal(sellerTotal);
+
+            // Calculate commission (10%) and payout (90%)
+            BigDecimal commission = sellerTotal.multiply(new BigDecimal("0.10"));
+            BigDecimal payout = sellerTotal.subtract(commission);
+            sellerOrder.setCommissionAmount(commission);
+            sellerOrder.setPayoutAmount(payout);
 
             SellerOrder savedSellerOrder = sellerOrderRepository.save(sellerOrder);
 
@@ -432,8 +441,36 @@ public class OrderService {
         }
         productRepository.save(product);
     }
-    public List<Order> getOrdersBySeller(Long sellerId) {
-        return orderRepository.findOrdersBySellerId(sellerId);
+    public List<SellerOrderDto> getOrdersBySeller(Long sellerId) {
+        List<SellerOrder> orders = sellerOrderRepository.findBySellerId(sellerId);
+        return orders.stream().map(this::mapToSellerOrderDto).collect(Collectors.toList());
+    }
+
+    private SellerOrderDto mapToSellerOrderDto(SellerOrder so) {
+        SellerOrderDto dto = new SellerOrderDto();
+        dto.setId(so.getId());
+        dto.setSubtotal(so.getSubtotal());
+        dto.setCommissionAmount(so.getCommissionAmount());
+        dto.setPayoutAmount(so.getPayoutAmount());
+        dto.setStatus(so.getStatus().name());
+        dto.setItems(so.getItems());
+
+        if (so.getOrder() != null) {
+            dto.setOrderNumber(so.getOrder().getOrderNumber());
+            dto.setOrderDate(so.getOrder().getOrderDate());
+            
+            User customer = so.getOrder().getUser();
+            if (customer != null) {
+                UserDto userDto = new UserDto();
+                userDto.setId(customer.getId());
+                userDto.setFirstName(customer.getFirstName());
+                userDto.setLastName(customer.getLastName());
+                userDto.setEmail(customer.getEmail());
+                userDto.setPhoneNumber(customer.getPhoneNumber());
+                dto.setUser(userDto);
+            }
+        }
+        return dto;
     }
 
     public List<Order> getAllOrders() {
