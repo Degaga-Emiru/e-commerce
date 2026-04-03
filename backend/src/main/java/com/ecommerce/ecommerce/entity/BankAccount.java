@@ -49,6 +49,7 @@ public class BankAccount {
 
     @OneToOne
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User user;
 
     @PrePersist

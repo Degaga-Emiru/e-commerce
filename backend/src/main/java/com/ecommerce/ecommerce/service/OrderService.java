@@ -4,6 +4,7 @@ import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.ecommerce.repository.*;
 import com.ecommerce.ecommerce.dto.ShippingAddressDto;
 import com.ecommerce.ecommerce.dto.SellerOrderDto;
+import com.ecommerce.ecommerce.dto.SellerOrderItemDto;
 import com.ecommerce.ecommerce.dto.UserDto;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -453,11 +454,42 @@ public class OrderService {
         dto.setCommissionAmount(so.getCommissionAmount());
         dto.setPayoutAmount(so.getPayoutAmount());
         dto.setStatus(so.getStatus().name());
-        dto.setItems(so.getItems());
+
+        List<SellerOrderItemDto> itemDtos = so.getItems().stream().map(item -> {
+            SellerOrderItemDto itemDto = new SellerOrderItemDto();
+            itemDto.setId(item.getId());
+            itemDto.setQuantity(item.getQuantity());
+            itemDto.setPrice(item.getUnitPrice());
+            itemDto.setTotalPrice(item.getTotalPrice());
+            if (item.getProduct() != null) {
+                Map<String, Object> productDetails = new HashMap<>();
+                productDetails.put("id", item.getProduct().getId());
+                productDetails.put("name", item.getProduct().getName());
+                productDetails.put("imageUrl", item.getProduct().getImageUrl());
+                itemDto.setProduct(productDetails);
+            }
+            return itemDto;
+        }).collect(Collectors.toList());
+
+        dto.setItems(itemDtos);
 
         if (so.getOrder() != null) {
+            dto.setMainOrderId(so.getOrder().getId());
             dto.setOrderNumber(so.getOrder().getOrderNumber());
             dto.setOrderDate(so.getOrder().getOrderDate());
+            
+            try {
+                Shipping shipping = shippingRepository.findByOrderId(so.getOrder().getId()).orElse(null);
+                if (shipping != null) {
+                    Map<String, Object> shipMap = new HashMap<>();
+                    shipMap.put("carrier", shipping.getCarrier());
+                    shipMap.put("trackingNumber", shipping.getTrackingNumber());
+                    shipMap.put("status", shipping.getStatus() != null ? shipping.getStatus().name() : null);
+                    dto.setShipping(shipMap);
+                }
+            } catch (Exception e) {
+                // ignore
+            }
             
             User customer = so.getOrder().getUser();
             if (customer != null) {

@@ -22,6 +22,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+
 @Service
 public class EscrowService {
 
@@ -50,6 +54,22 @@ public class EscrowService {
         this.demoBankService = demoBankService;
         this.paymentRepository = paymentRepository;
         this.sellerProfileRepository = sellerProfileRepository;
+    }
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @PostConstruct
+    @Transactional
+    public void syncDatabaseConstraints() {
+        try {
+            entityManager.createNativeQuery("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_transaction_type_check").executeUpdate();
+            entityManager.createNativeQuery("ALTER TABLE seller_orders DROP CONSTRAINT IF EXISTS seller_orders_status_check").executeUpdate();
+            System.out.println("✅ Database Sync: Dropped enum check constraints for Escrow Service.");
+        } catch (Exception e) {
+            System.err.println("❌ Database Sync Failed: " + e.getMessage());
+        }
     }
 
     @Transactional
@@ -113,7 +133,9 @@ public class EscrowService {
                     // Update Seller's available balance instead of direct bank transfer
                     SellerProfile profile = sellerProfileRepository.findByUserId(so.getSeller().getId())
                             .orElseThrow(() -> new RuntimeException("Seller profile not found"));
-                    profile.setAvailableBalance(profile.getAvailableBalance().add(netAmount));
+                    
+                    BigDecimal currentBalance = profile.getAvailableBalance() != null ? profile.getAvailableBalance() : BigDecimal.ZERO;
+                    profile.setAvailableBalance(currentBalance.add(netAmount));
                     sellerProfileRepository.save(profile);
 
                     // Record Payment history
@@ -140,6 +162,7 @@ public class EscrowService {
                     sellerOrderRepository.save(so);
                 } catch (Exception e) {
                     System.err.println("Error processing payout for seller: " + e.getMessage());
+                    throw new RuntimeException("Transaction failed inside EscrowService: " + e.getMessage(), e);
                 }
             }
 

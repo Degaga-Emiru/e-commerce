@@ -37,7 +37,7 @@ export default function SellerSettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await api.get('/api/seller/settings');
+        const res = await api.get('/seller/settings');
         if (res.data?.data) {
           const d = res.data.data;
           setFormData({
@@ -68,7 +68,7 @@ export default function SellerSettingsPage() {
         taxId: formData.profile.taxId,
         businessRegistrationNumber: formData.profile.businessRegistrationNumber
       };
-      await api.put('/api/seller/settings/profile', payload);
+      await api.put('/seller/settings/profile', payload);
       toast.success('Profile settings saved!');
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to save profile');
@@ -78,7 +78,7 @@ export default function SellerSettingsPage() {
   const saveBank = async () => {
     setSaving(true);
     try {
-      await api.post('/api/seller/settings/bank', formData.bankAccount);
+      await api.post('/seller/settings/bank', formData.bankAccount);
       toast.success('Bank account details updated!');
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Failed to save bank info');
@@ -88,7 +88,7 @@ export default function SellerSettingsPage() {
   const saveNotifications = async () => {
     setSaving(true);
     try {
-      await api.put('/api/seller/settings/notifications', {
+      await api.put('/seller/settings/notifications', {
         emailNewOrder: formData.profile.emailNewOrder,
         emailShippingUpdate: formData.profile.emailShippingUpdate,
         emailEscrowRelease: formData.profile.emailEscrowRelease
@@ -103,7 +103,7 @@ export default function SellerSettingsPage() {
     if (passwords.newPassword !== passwords.confirmPassword) return toast.error('Passwords do not match');
     setSaving(true);
     try {
-      await api.put('/api/seller/settings/password', {
+      await api.put('/seller/settings/password', {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       });

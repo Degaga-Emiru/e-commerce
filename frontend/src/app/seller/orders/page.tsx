@@ -27,6 +27,7 @@ interface Order {
   payoutAmount: number;
   finalAmount: number; 
   orderDate: string; 
+  mainOrderId?: number;
   items: any[]; 
   shipping?: { carrier?: string; trackingNumber?: string };
 }
@@ -59,9 +60,10 @@ export default function SellerOrdersPage() {
       .finally(() => setLoading(false));
   };
 
-  const updateShipping = async (orderId: number, status: string) => {
+  const updateShipping = async (mainOrderId: number | undefined, status: string) => {
+    if (!mainOrderId) return toast.error('Order ID missing');
     try {
-      await shippingApi.updateStatus(orderId, { 
+      await shippingApi.updateStatus(mainOrderId, { 
         status, 
         carrier: trackingData.carrier, 
         trackingNumber: trackingData.trackingNumber,
@@ -212,7 +214,7 @@ export default function SellerOrdersPage() {
                         return (
                           <button 
                             key={s} 
-                            onClick={() => updateShipping(order.id, s)}
+                            onClick={() => updateShipping(order.mainOrderId, s)}
                             disabled={disabled || active}
                             style={{ 
                               padding: '0.5rem 0.75rem', 
