@@ -36,13 +36,13 @@ public class SellerProfile {
 
     // Notification Toggles
     @Column(name = "email_new_order")
-    private boolean emailNewOrder = true;
+    private Boolean emailNewOrder = true;
 
     @Column(name = "email_shipping_update")
-    private boolean emailShippingUpdate = true;
+    private Boolean emailShippingUpdate = true;
 
     @Column(name = "email_escrow_release")
-    private boolean emailEscrowRelease = true;
+    private Boolean emailEscrowRelease = true;
 
     @Column(name = "available_balance", precision = 15, scale = 2)
     private BigDecimal availableBalance = BigDecimal.ZERO;
@@ -95,14 +95,14 @@ public class SellerProfile {
     public String getBusinessRegistrationNumber() { return businessRegistrationNumber; }
     public void setBusinessRegistrationNumber(String businessRegistrationNumber) { this.businessRegistrationNumber = businessRegistrationNumber; }
     
-    public boolean isEmailNewOrder() { return emailNewOrder; }
-    public void setEmailNewOrder(boolean emailNewOrder) { this.emailNewOrder = emailNewOrder; }
+    public Boolean isEmailNewOrder() { return emailNewOrder != null ? emailNewOrder : true; }
+    public void setEmailNewOrder(Boolean emailNewOrder) { this.emailNewOrder = emailNewOrder; }
     
-    public boolean isEmailShippingUpdate() { return emailShippingUpdate; }
-    public void setEmailShippingUpdate(boolean emailShippingUpdate) { this.emailShippingUpdate = emailShippingUpdate; }
+    public Boolean isEmailShippingUpdate() { return emailShippingUpdate != null ? emailShippingUpdate : true; }
+    public void setEmailShippingUpdate(Boolean emailShippingUpdate) { this.emailShippingUpdate = emailShippingUpdate; }
     
-    public boolean isEmailEscrowRelease() { return emailEscrowRelease; }
-    public void setEmailEscrowRelease(boolean emailEscrowRelease) { this.emailEscrowRelease = emailEscrowRelease; }
+    public Boolean isEmailEscrowRelease() { return emailEscrowRelease != null ? emailEscrowRelease : true; }
+    public void setEmailEscrowRelease(Boolean emailEscrowRelease) { this.emailEscrowRelease = emailEscrowRelease; }
 
     public BigDecimal getAvailableBalance() { return availableBalance; }
     public void setAvailableBalance(BigDecimal availableBalance) { this.availableBalance = availableBalance; }

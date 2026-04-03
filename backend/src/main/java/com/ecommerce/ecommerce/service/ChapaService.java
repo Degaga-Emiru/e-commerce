@@ -3,6 +3,8 @@ package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.dto.chapa.ChapaInitializeRequest;
 import com.ecommerce.ecommerce.dto.chapa.ChapaInitializeResponse;
 import com.ecommerce.ecommerce.dto.chapa.ChapaVerifyResponse;
+import com.ecommerce.ecommerce.dto.chapa.ChapaTransferRequest;
+import com.ecommerce.ecommerce.dto.chapa.ChapaTransferResponse;
 import com.ecommerce.ecommerce.entity.Order;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -83,6 +85,53 @@ public class ChapaService {
         } catch (Exception e) {
             logger.error("Chapa verify API call failed: {}", e.getMessage());
             throw new RuntimeException("Failed to verify Chapa transaction: " + e.getMessage());
+        }
+    }
+
+    public ChapaTransferResponse transferFunds(String accountName, String accountNumber, java.math.BigDecimal amount, String bankName) {
+        String url = baseUrl + "/transfers";
+        logger.info("Initializing Chapa transfer for: {} to account: {}", amount, accountNumber);
+        
+        // Basic mapping for Ethiopian banks to their Chapa Numeric IDs
+        String bankCode = "855"; // default to telebirr
+        if (bankName != null) {
+            String b = bankName.toLowerCase();
+            if (b.contains("cbe") || b.contains("commercial")) bankCode = "128"; // CBEBirr
+            else if (b.contains("awash")) bankCode = "805"; // Awash
+            else if (b.contains("dashen")) bankCode = "6ee"; // Dashen
+            else if (b.contains("telebirr")) bankCode = "855";
+            else if (b.contains("abyssinia")) bankCode = "84s";
+        }
+
+        // Failsafe for numeric only
+        bankCode = bankCode.replaceAll("[^0-9]", "");
+        if (bankCode.isEmpty()) bankCode = "855";
+
+        ChapaTransferRequest request = ChapaTransferRequest.builder()
+                .account_name(accountName)
+                .account_number(accountNumber)
+                .amount(amount)
+                .currency("ETB")
+                .reference("WD-" + System.currentTimeMillis())
+                .bank_code(bankCode)
+                .build();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(secretKey);
+
+        HttpEntity<ChapaTransferRequest> entity = new HttpEntity<>(request, headers);
+
+        try {
+            ChapaTransferResponse response = restTemplate.postForObject(url, entity, ChapaTransferResponse.class);
+            logger.info("Chapa transfer response: {}", response);
+            if (response != null && "failed".equalsIgnoreCase(response.getStatus())) {
+                throw new RuntimeException(response.getMessage());
+            }
+            return response;
+        } catch (Exception e) {
+            logger.error("Failed to execute Chapa transfer: {}", e.getMessage());
+            throw new RuntimeException("Failed to execute Chapa transfer API: " + e.getMessage());
         }
     }
 }

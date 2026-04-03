@@ -15,15 +15,18 @@ public class WithdrawalService {
     private final SellerProfileRepository sellerProfileRepository;
     private final DemoBankService demoBankService;
     private final BankAccountRepository bankAccountRepository;
+    private final ChapaService chapaService;
 
     public WithdrawalService(WithdrawalRequestRepository withdrawalRepository,
                              SellerProfileRepository sellerProfileRepository,
                              DemoBankService demoBankService,
-                             BankAccountRepository bankAccountRepository) {
+                             BankAccountRepository bankAccountRepository,
+                             ChapaService chapaService) {
         this.withdrawalRepository = withdrawalRepository;
         this.sellerProfileRepository = sellerProfileRepository;
         this.demoBankService = demoBankService;
         this.bankAccountRepository = bankAccountRepository;
+        this.chapaService = chapaService;
     }
 
     @Transactional
@@ -42,20 +45,32 @@ public class WithdrawalService {
             throw new RuntimeException("Bank account is inactive");
         }
 
-        // Create Request
+        // Create Request immediately as APPROVED
         WithdrawalRequest request = new WithdrawalRequest();
         request.setSeller(profile.getUser());
         request.setAmount(amount);
-        request.setStatus(WithdrawalStatus.PENDING);
+        request.setStatus(WithdrawalStatus.APPROVED);
+        request.setProcessedAt(LocalDateTime.now());
         
         // Snapshot bank info
         String snapshot = String.format("Bank: %s, Holder: %s, Account: %s", 
                 bankAccount.getBankName(), bankAccount.getAccountHolderName(), bankAccount.getAccountNumber());
         request.setBankAccountSnapshot(snapshot);
 
-        // Deduct from available balance immediately (reserve the funds)
+        // Deduct from available balance officially
         profile.setAvailableBalance(profile.getAvailableBalance().subtract(amount));
         sellerProfileRepository.save(profile);
+
+        // LIVE CHAPA PAYOUT TRIGGER
+        try {
+            chapaService.transferFunds(bankAccount.getAccountHolderName(), bankAccount.getAccountNumber(), amount, bankAccount.getBankName());
+            request.setStatus(WithdrawalStatus.APPROVED);
+        } catch (Exception e) {
+            // Restore funds if transfer API call fails entirely
+            profile.setAvailableBalance(profile.getAvailableBalance().add(amount));
+            sellerProfileRepository.save(profile);
+            throw new RuntimeException("Chapa payout failed: " + e.getMessage());
+        }
 
         return withdrawalRepository.save(request);
     }
