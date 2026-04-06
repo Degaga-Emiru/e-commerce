@@ -72,6 +72,12 @@ public class SellerController {
         return ResponseEntity.ok(orderService.getOrdersBySeller(userId));
     }
 
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<SellerOrderDto> getOrderById(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        return ResponseEntity.ok(orderService.getSellerOrderById(id, userId));
+    }
+
     @PutMapping("/orders/{orderId}/shipping")
     public ResponseEntity<Shipping> updateShipping(
             @PathVariable Long orderId,

@@ -442,6 +442,17 @@ public class OrderService {
         }
         productRepository.save(product);
     }
+    public SellerOrderDto getSellerOrderById(Long sellerOrderId, Long sellerId) {
+        SellerOrder so = sellerOrderRepository.findById(sellerOrderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Seller order not found with id: " + sellerOrderId));
+
+        if (!so.getSeller().getId().equals(sellerId)) {
+            throw new RuntimeException("Unauthorized: This order does not belong to your shop.");
+        }
+
+        return mapToSellerOrderDto(so);
+    }
+
     public List<SellerOrderDto> getOrdersBySeller(Long sellerId) {
         List<SellerOrder> orders = sellerOrderRepository.findBySellerId(sellerId);
         return orders.stream().map(this::mapToSellerOrderDto).collect(Collectors.toList());
