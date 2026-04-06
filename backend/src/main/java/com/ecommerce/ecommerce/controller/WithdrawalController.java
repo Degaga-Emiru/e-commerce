@@ -48,6 +48,26 @@ public class WithdrawalController {
         return ResponseEntity.ok(new ApiResponse<>(true, "Withdrawal history retrieved", history));
     }
 
+    @GetMapping("/admin/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<WithdrawalRequest>>> getAllForAdmin() {
+        return ResponseEntity.ok(new ApiResponse<>(true, "All withdrawals retrieved", withdrawalService.getAllWithdrawals()));
+    }
+
+    @PostMapping("/admin/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> approve(@PathVariable Long id) {
+        withdrawalService.approveWithdrawal(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Withdrawal approved and funds released", null));
+    }
+
+    @PostMapping("/admin/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> reject(@PathVariable Long id) {
+        withdrawalService.rejectWithdrawal(id);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Withdrawal rejected", null));
+    }
+
     private Long getUserId(Authentication auth) {
         return userRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"))

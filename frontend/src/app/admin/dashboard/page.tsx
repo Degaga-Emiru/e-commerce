@@ -42,12 +42,18 @@ interface Product {
   stockQuantity: number; category?: { id: number; name: string };
   seller?: { id: number; shopName: string };
 }
+interface WithdrawalRequest {
+  id: number; amount: number; status: string; createdAt: string; processedAt?: string;
+  bankAccountSnapshot: string;
+  seller?: { id: number; firstName: string; lastName: string; email: string };
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const SC: Record<string, string> = {
   PENDING: '#f59e0b', PROCESSING: '#6366f1', SHIPPED: '#06b6d4',
   OUT_FOR_DELIVERY: '#f97316', DELIVERED: '#10b981', CANCELLED: '#ef4444',
   HELD: '#f59e0b', RELEASED: '#10b981', REFUNDED: '#ef4444',
+  COMPLETED: '#10b981', REJECTED: '#ef4444',
 };
 const STEPS = ['PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 const TABS = [
@@ -58,6 +64,7 @@ const TABS = [
   { id: 'products',      label: 'Products',        icon: ShoppingBag },
   { id: 'users',         label: 'Users',           icon: Users       },
   { id: 'sellers',       label: 'Sellers',         icon: Store       },
+  { id: 'withdrawals',   label: 'Withdrawals',     icon: DollarSign  },
   { id: 'notifications', label: 'Notifications',   icon: Bell        },
   { id: 'settings',      label: 'Settings',        icon: Settings    },
 ];
@@ -81,6 +88,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [sellers, setSellers] = useState<SellerProfile[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -91,13 +99,14 @@ export default function AdminDashboard() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, ordersRes, escrowRes, usersRes, sellersRes, productsRes] = await Promise.allSettled([
+      const [dashRes, ordersRes, escrowRes, usersRes, sellersRes, productsRes, withdrawRes] = await Promise.allSettled([
         api.get('/admin/dashboard'),
         api.get('/admin/orders'),
         api.get('/admin/escrow'),
         api.get('/admin/users'),
         api.get('/admin/sellers'),
         api.get('/admin/products'),
+        api.get('/seller/withdrawals/admin/all'),
       ]);
 
       if (dashRes.status === 'fulfilled') {
@@ -107,30 +116,28 @@ export default function AdminDashboard() {
       if (ordersRes.status === 'fulfilled') {
         const raw = extract(ordersRes.value);
         setOrders(Array.isArray(raw) ? raw : []);
-      } else {
-        console.error('Orders error:', ordersRes.reason?.response?.data);
       }
       if (escrowRes.status === 'fulfilled') {
         const raw = extract(escrowRes.value);
         setEscrows(Array.isArray(raw) ? raw : []);
-      } else {
-        console.error('Escrow error:', escrowRes.reason?.response?.data);
       }
       if (usersRes.status === 'fulfilled') {
         const raw = extract(usersRes.value);
         setUsers(Array.isArray(raw) ? raw : []);
-      } else {
-        console.error('Users error:', usersRes.reason?.response?.data);
       }
       if (sellersRes.status === 'fulfilled') {
         const raw = extract(sellersRes.value);
         setSellers(Array.isArray(raw) ? raw : []);
-      } else {
-        console.error('Sellers error:', sellersRes.reason?.response?.data);
       }
       if (productsRes.status === 'fulfilled') {
         const raw = extract(productsRes.value);
         setProducts(Array.isArray(raw) ? raw : []);
+      }
+      if (withdrawRes.status === 'fulfilled') {
+        const raw = extract(withdrawRes.value);
+        setWithdrawals(Array.isArray(raw) ? raw : []);
+      } else {
+        console.error('Withdrawals fetch error:', withdrawRes.reason?.response?.data || withdrawRes.reason);
       }
     } catch (e) {
       console.error('Dashboard fetch error:', e);
@@ -231,6 +238,29 @@ export default function AdminDashboard() {
       toast.success('Database constraints synced!', { id: loader });
     } catch (e: any) {
       toast.error(e.response?.data?.message || 'Sync failed', { id: loader });
+    }
+  };
+
+  const approveWithdrawal = async (id: number) => {
+    const loader = toast.loading('Approving withdrawal and releasing funds...');
+    try {
+      await api.post(`/seller/withdrawals/admin/${id}/approve`);
+      toast.success('Withdrawal approved! Funds have been released to the seller wallet.', { id: loader });
+      fetchAll();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Approval failed', { id: loader });
+    }
+  };
+
+  const rejectWithdrawal = async (id: number) => {
+    if (!confirm('Reject this withdrawal request?')) return;
+    const loader = toast.loading('Rejecting request...');
+    try {
+      await api.post(`/seller/withdrawals/admin/${id}/reject`);
+      toast.success('Withdrawal request rejected.', { id: loader });
+      fetchAll();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Rejection failed', { id: loader });
     }
   };
 
@@ -788,6 +818,59 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderWithdrawalsTab = () => (
+    <div>
+      <h2 style={{ margin: '0 0 1.5rem', color: '#f1f5f9', fontWeight: 800, fontSize: '1.4rem' }}>🧾 Withdrawal Management</h2>
+      <div style={S.card}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', color: '#f1f5f9' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>ID</th>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>Seller</th>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>Amount</th>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>Status</th>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>Date</th>
+              <th style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#64748b', textTransform: 'uppercase' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {withdrawals.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#475569' }}>No withdrawal requests found.</td></tr>
+            ) : withdrawals.map(w => (
+              <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <td style={{ padding: '1rem 0.5rem', fontSize: 13, color: '#94a3b8' }}>#{w.id}</td>
+                <td style={{ padding: '1rem 0.5rem' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14 }}>{w.seller?.firstName} {w.seller?.lastName}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{w.seller?.email}</p>
+                </td>
+                <td style={{ padding: '1rem 0.5rem', fontWeight: 800, color: '#10b981' }}>ETB {w.amount.toLocaleString()}</td>
+                <td style={{ padding: '1rem 0.5rem' }}>
+                  <span style={badge(w.status)}>{w.status}</span>
+                </td>
+                <td style={{ padding: '1rem 0.5rem', fontSize: 12, color: '#475569' }}>
+                   {new Date(w.createdAt).toLocaleDateString()}
+                </td>
+                <td style={{ padding: '1rem 0.5rem' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {w.status === 'PENDING' ? (
+                      <>
+                        <button onClick={() => approveWithdrawal(w.id)} style={{ ...btn('#10b981'), padding: '0.4rem 0.8rem' }}>Approve</button>
+                        <button onClick={() => rejectWithdrawal(w.id)} style={{ ...btn('#ef4444', true), padding: '0.4rem 0.8rem' }}>Reject</button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>Processed</span>
+                    )}
+                    <button onClick={() => alert(w.bankAccountSnapshot)} style={{ ...btn('#6366f1', true), padding: '0.4rem 0.8rem' }}>Details</button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (tab) {
       case 'overview': return renderOverviewTab();
@@ -799,6 +882,7 @@ export default function AdminDashboard() {
       case 'products': return renderProductsTab();
       case 'notifications': return renderNotifTab();
       case 'settings': return renderSettingsTab();
+      case 'withdrawals': return renderWithdrawalsTab();
       default: return renderOverviewTab();
     }
   };

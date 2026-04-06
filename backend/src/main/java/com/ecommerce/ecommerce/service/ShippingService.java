@@ -144,7 +144,8 @@ public class ShippingService {
             // Drop the constraint if it exists to allow new Enum values added after DB was initialized
             // This is common when 'hbm2ddl.auto=update' is used but it doesn't update legacy constraints.
             entityManager.createNativeQuery("ALTER TABLE shipping DROP CONSTRAINT IF EXISTS shipping_status_check").executeUpdate();
-            System.out.println("✅ Database Sync: Dropped shipping_status_check constraint.");
+            entityManager.createNativeQuery("ALTER TABLE withdrawal_requests DROP CONSTRAINT IF EXISTS withdrawal_requests_status_check").executeUpdate();
+            System.out.println("✅ Database Sync: Dropped shipping and withdrawal status check constraints.");
         } catch (Exception e) {
             System.err.println("❌ Database Sync Failed: " + e.getMessage());
         }

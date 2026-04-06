@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class WithdrawalService {
@@ -35,7 +36,7 @@ public class WithdrawalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Seller profile not found"));
 
         if (profile.getAvailableBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient balance for withdrawal");
+            throw new RuntimeException("Insufficient wallet balance for withdrawal.");
         }
 
         BankAccount bankAccount = bankAccountRepository.findByUserId(sellerId)
@@ -45,32 +46,20 @@ public class WithdrawalService {
             throw new RuntimeException("Bank account is inactive");
         }
 
-        // Create Request immediately as APPROVED
+        // Deduct balance immediately
+        profile.setAvailableBalance(profile.getAvailableBalance().subtract(amount));
+        sellerProfileRepository.save(profile);
+
+        // Create Request as PENDING
         WithdrawalRequest request = new WithdrawalRequest();
         request.setSeller(profile.getUser());
         request.setAmount(amount);
-        request.setStatus(WithdrawalStatus.APPROVED);
-        request.setProcessedAt(LocalDateTime.now());
+        request.setStatus(WithdrawalStatus.PENDING);
         
         // Snapshot bank info
         String snapshot = String.format("Bank: %s, Holder: %s, Account: %s", 
                 bankAccount.getBankName(), bankAccount.getAccountHolderName(), bankAccount.getAccountNumber());
         request.setBankAccountSnapshot(snapshot);
-
-        // Deduct from available balance officially
-        profile.setAvailableBalance(profile.getAvailableBalance().subtract(amount));
-        sellerProfileRepository.save(profile);
-
-        // LIVE CHAPA PAYOUT TRIGGER
-        try {
-            chapaService.transferFunds(bankAccount.getAccountHolderName(), bankAccount.getAccountNumber(), amount, bankAccount.getBankName());
-            request.setStatus(WithdrawalStatus.APPROVED);
-        } catch (Exception e) {
-            // Restore funds if transfer API call fails entirely
-            profile.setAvailableBalance(profile.getAvailableBalance().add(amount));
-            sellerProfileRepository.save(profile);
-            throw new RuntimeException("Chapa payout failed: " + e.getMessage());
-        }
 
         return withdrawalRepository.save(request);
     }
@@ -84,22 +73,34 @@ public class WithdrawalService {
             throw new RuntimeException("Request is already " + request.getStatus());
         }
 
-        // Process actual bank transfer simulation
-        BankAccount platformEscrow = bankAccountRepository.findByAccountNumber("ESCROW0001")
-                .orElseThrow(() -> new RuntimeException("Platform escrow account not found"));
-        
-        BankAccount sellerBank = bankAccountRepository.findByUserId(request.getSeller().getId())
-                .orElseThrow(() -> new RuntimeException("Seller bank account not found"));
-
-        // Platform -> Seller transfer
-        platformEscrow.setBalance(platformEscrow.getBalance().subtract(request.getAmount()));
-        sellerBank.setBalance(sellerBank.getBalance().add(request.getAmount()));
-        
-        bankAccountRepository.save(platformEscrow);
-        bankAccountRepository.save(sellerBank);
-
-        request.setStatus(WithdrawalStatus.APPROVED);
+        // Funds were already deducted upon request, so we just mark as COMPLETED
+        request.setStatus(WithdrawalStatus.COMPLETED);
         request.setProcessedAt(LocalDateTime.now());
         withdrawalRepository.save(request);
+    }
+
+    @Transactional
+    public void rejectWithdrawal(Long requestId) {
+        WithdrawalRequest request = withdrawalRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Withdrawal request not found"));
+
+        if (request.getStatus() != WithdrawalStatus.PENDING) {
+            throw new RuntimeException("Request is already " + request.getStatus());
+        }
+
+        // Refund the amount back to the seller's wallet
+        SellerProfile profile = sellerProfileRepository.findByUserId(request.getSeller().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Seller profile not found"));
+
+        profile.setAvailableBalance(profile.getAvailableBalance().add(request.getAmount()));
+        sellerProfileRepository.save(profile);
+
+        request.setStatus(WithdrawalStatus.REJECTED);
+        request.setProcessedAt(LocalDateTime.now());
+        withdrawalRepository.save(request);
+    }
+
+    public List<WithdrawalRequest> getAllWithdrawals() {
+        return withdrawalRepository.findAllByOrderByCreatedAtDesc();
     }
 }

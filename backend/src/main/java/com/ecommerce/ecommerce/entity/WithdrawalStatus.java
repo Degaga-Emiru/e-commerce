@@ -1,5 +1,5 @@
 package com.ecommerce.ecommerce.entity;
 
 public enum WithdrawalStatus {
-    PENDING, APPROVED, REJECTED
+    PENDING, APPROVED, REJECTED, COMPLETED
 }

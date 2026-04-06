@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 @Entity
 @Table(name = "users")
-@JsonIgnoreProperties({"products", "orders", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode"})
+@JsonIgnoreProperties({"products", "orders", "reviews", "cart", "bankAccount", "addresses", "password", "verificationCode", "hibernateLazyInitializer", "handler"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

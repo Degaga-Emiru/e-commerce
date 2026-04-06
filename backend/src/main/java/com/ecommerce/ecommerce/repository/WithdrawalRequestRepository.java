@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface WithdrawalRequestRepository extends JpaRepository<WithdrawalRequest, Long> {
     List<WithdrawalRequest> findBySellerIdOrderByCreatedAtDesc(Long sellerId);
+    List<WithdrawalRequest> findAllByOrderByCreatedAtDesc();
 }
