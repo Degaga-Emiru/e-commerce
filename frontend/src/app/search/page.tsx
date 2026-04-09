@@ -1,16 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { searchApi } from '@/services/api';
 import ProductCard from '@/components/product/ProductCard';
 import FilterSidebar from '@/components/product/FilterSidebar';
-import { Search, Loader2, SlidersHorizontal, ArrowRight } from 'lucide-react';
-import { searchApi } from '@/services/api';
+import { Loader2, Search, SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 
-export default function ProductsPage() {
+export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+  
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    query: '',
+    query: initialQuery,
     categoryId: null,
     minPrice: '',
     maxPrice: '',
@@ -32,8 +36,10 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts(filters);
-  }, []);
+    const newFilters = { ...filters, query: initialQuery };
+    setFilters(newFilters);
+    fetchProducts(newFilters);
+  }, [initialQuery]);
 
   const handleFilterChange = (newFilters: any) => {
     const updated = { ...filters, ...newFilters };
@@ -53,42 +59,28 @@ export default function ProductsPage() {
       <div className="flex flex-col md:flex-row items-baseline justify-between gap-8 mb-16">
         <div className="space-y-2">
            <h1 className="text-5xl font-black tracking-tighter uppercase italic">
-             Our Collections
+             {filters.query ? `Results for "${filters.query}"` : 'Explore Collection'}
            </h1>
-           <p className="text-gray-400 font-black tracking-widest text-xs uppercase">
-             {products.length} precision pieces curated for excellence
-           </p>
+           <p className="text-gray-400 font-black tracking-widest text-xs">FOUND {products.length} PRECISION PIECES</p>
         </div>
 
-        <div className="flex items-center gap-4 w-full md:w-auto">
-           <div className="relative flex-1 group">
-             <input
-                type="text"
-                placeholder="Search catalog..."
-                value={filters.query}
-                onChange={(e) => handleFilterChange({ query: e.target.value })}
-                className="w-full bg-gray-50 border-none rounded-2xl py-4 px-12 focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all outline-none font-bold"
-             />
-             <Search className="absolute left-4 top-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={20} />
-           </div>
-
+        <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
            <select 
              value={filters.sortBy}
              onChange={(e) => handleSortChange(e.target.value)}
-             className="bg-gray-50 border-none rounded-2xl py-4 px-8 font-black text-xs uppercase tracking-widest outline-none focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer hidden lg:block"
+             className="bg-gray-50 border-none rounded-xl py-4 px-6 font-black text-xs uppercase tracking-widest outline-none focus:ring-2 focus:ring-orange-500/20 transition-all cursor-pointer min-w-[180px]"
            >
-             <option value="newest">New Drops</option>
+             <option value="newest">Newest Drops</option>
              <option value="price_asc">Price: Low - High</option>
              <option value="price_desc">Price: High - Low</option>
-             <option value="best_selling">Popularity</option>
+             <option value="best_selling">Most Loved</option>
            </select>
         </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-16">
-        <aside className="w-full lg:w-80 shrink-0">
-          <FilterSidebar onFilterChange={handleFilterChange} />
-        </aside>
+        {/* Mobile Filter Toggle placeholder later, now sidebar is responsive */}
+        <FilterSidebar onFilterChange={handleFilterChange} />
 
         <div className="flex-1 space-y-12">
           {loading ? (
@@ -102,10 +94,10 @@ export default function ProductsPage() {
                <Search className="mx-auto text-gray-200 mb-6" size={64} />
                <p className="text-gray-400 font-bold text-xl">No precision pieces found matching your criteria.</p>
                <button 
-                 onClick={() => handleFilterChange({ query: '', categoryId: null, minPrice: '', maxPrice: '', brand: '', minRating: null })}
+                 onClick={() => handleFilterChange({ categoryId: null, minPrice: '', maxPrice: '', brand: '', minRating: null })}
                  className="text-orange-500 font-black mt-4 hover:underline"
                >
-                 Flush all filters
+                 Clear all filters
                </button>
             </div>
           ) : (

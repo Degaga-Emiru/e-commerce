@@ -11,7 +11,9 @@ import com.ecommerce.ecommerce.mapper.ProductMapper;
 import com.ecommerce.ecommerce.repository.ProductRepository;
 import com.ecommerce.ecommerce.repository.CategoryRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
+import com.ecommerce.ecommerce.repository.ProductSpecification;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -86,30 +88,22 @@ public class ProductService {
         return productMapper.toDtoList(products);
     }
 
-    public List<ProductDto> getProductsWithFilters(Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, String sortBy) {
-        List<Product> products;
+    public List<ProductDto> getProductsWithFilters(String query, Long categoryId, BigDecimal minPrice, BigDecimal maxPrice, String brand, Double minRating, String sortBy) {
+        Specification<Product> spec = ProductSpecification.filterProducts(query, categoryId, minPrice, maxPrice, brand, minRating, ProductStatus.ACTIVE);
 
-        if (categoryId != null && minPrice != null && maxPrice != null) {
-            products = productRepository.findByCategoryAndPriceRange(categoryId, minPrice, maxPrice);
-        } else if (categoryId != null) {
-            products = productRepository.findByCategoryId(categoryId);
-        } else if (minPrice != null && maxPrice != null) {
-            products = productRepository.findByPriceRange(minPrice, maxPrice);
-        } else {
-            products = productRepository.findAvailableProducts();
-        }
-
-        // Sort products
+        Sort sort = Sort.unsorted();
         if ("price_asc".equals(sortBy)) {
-            products.sort((p1, p2) -> p1.getPrice().compareTo(p2.getPrice()));
+            sort = Sort.by(Sort.Direction.ASC, "price");
         } else if ("price_desc".equals(sortBy)) {
-            products.sort((p1, p2) -> p2.getPrice().compareTo(p1.getPrice()));
-        } else if ("name".equals(sortBy)) {
-            products.sort((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()));
+            sort = Sort.by(Sort.Direction.DESC, "price");
         } else if ("newest".equals(sortBy)) {
-            products.sort((p1, p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()));
+            sort = Sort.by(Sort.Direction.DESC, "createdAt");
+        } else if ("best_selling".equals(sortBy)) {
+            // Placeholder: Sort by popularity or sales count if we have that field
+            sort = Sort.by(Sort.Direction.DESC, "createdAt"); 
         }
 
+        List<Product> products = productRepository.findAll(spec, sort);
         return productMapper.toDtoList(products);
     }
 

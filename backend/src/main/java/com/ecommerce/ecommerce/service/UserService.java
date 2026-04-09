@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,14 +21,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final FileStorageService fileStorageService;
 
     @Value("${app.otp.expiration-minutes:15}")
     private int otpExpirationMinutes;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, FileStorageService fileStorageService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.fileStorageService = fileStorageService;
     }
 
     public User registerUser(RegisterRequest registerRequest) {
@@ -176,6 +179,33 @@ public class UserService {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setPhoneNumber(phoneNumber);
+        return userRepository.save(user);
+    }
+
+    public User updateProfilePicture(Long userId, MultipartFile file) {
+        User user = getUserById(userId);
+
+        // Delete old profile picture if it exists
+        if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isEmpty()) {
+            try {
+                fileStorageService.deleteFile(user.getProfilePictureUrl());
+            } catch (Exception e) {
+                // Log but continue
+                System.err.println("Failed to delete old profile picture: " + e.getMessage());
+            }
+        }
+
+        String imageUrl = fileStorageService.storeFile(file);
+        user.setProfilePictureUrl(imageUrl);
+        return userRepository.save(user);
+    }
+
+    public User deleteProfilePicture(Long userId) {
+        User user = getUserById(userId);
+        if (user.getProfilePictureUrl() != null) {
+            fileStorageService.deleteFile(user.getProfilePictureUrl());
+            user.setProfilePictureUrl(null);
+        }
         return userRepository.save(user);
     }
 

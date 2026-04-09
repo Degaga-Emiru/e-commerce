@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import Link from 'next/link';
-import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
+import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight, Ticket, Timer } from 'lucide-react';
+import CountdownTimer from '@/components/product/CountdownTimer';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -211,6 +212,41 @@ export default function Home() {
               </div>
             ))
           )}
+        </div>
+      </section>
+
+      {/* Flash Sale Section */}
+      <section className="container mx-auto px-6 overflow-hidden">
+        <div className="bg-rose-50 rounded-[4rem] border-2 border-rose-100 p-12 md:p-20 relative overflow-hidden group">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative z-10">
+            <div className="space-y-8 max-w-xl">
+              <div className="inline-flex items-center gap-2 bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest animate-pulse">
+                <Zap size={14} /> Flash Deals
+              </div>
+              <h2 className="text-5xl md:text-7xl font-black text-gray-900 leading-none">ENDS IN THE BLINK OF <br /> <span className="text-rose-500 italic">AN EYE.</span></h2>
+              <p className="text-gray-500 font-medium text-lg">Uncompromising quality at unprecedented prices. These elite selections won't wait for anyone.</p>
+              <div className="pt-4">
+                 <CountdownTimer expiryDate={new Date(Date.now() + 86400000).toISOString()} />
+              </div>
+              <Link href="/search?flashSale=true" className="btn-primary bg-rose-500 shadow-rose-500/20 hover:bg-rose-600 inline-block">VIEW ALL DEALS</Link>
+            </div>
+
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {MOCK_PRODUCTS.slice(4, 6).map((product) => (
+                <div key={product.id} className="bg-white p-2 rounded-[2.5rem] shadow-2xl shadow-rose-500/10">
+                   <ProductCard product={{
+                     ...product,
+                     discountPrice: product.id === 5 ? 89.99 : 110.00,
+                     flashSaleExpiry: new Date(Date.now() + 86400000).toISOString()
+                   }} />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/5 blur-[100px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-200/20 blur-[80px] rounded-full -translate-x-1/2 translate-y-1/2"></div>
         </div>
       </section>
 

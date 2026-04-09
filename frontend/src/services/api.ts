@@ -11,7 +11,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (token && token !== 'undefined' && token !== 'null') {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -38,6 +38,23 @@ export const notificationApi = {
   getUnreadCount: () => api.get('/notifications/unread-count'),
   markAsRead: (id: number) => api.put(`/notifications/${id}/read`),
   markAllAsRead: () => api.put('/notifications/read-all'),
+};
+
+export const categoryApi = {
+  getAll: () => api.get('/categories'),
+  getById: (id: number) => api.get(`/categories/${id}`),
+};
+
+export const wishlistApi = {
+  getWishlist: () => api.get('/wishlist'),
+  addToWishlist: (productId: number) => api.post(`/wishlist/${productId}`),
+  removeFromWishlist: (productId: number) => api.delete(`/wishlist/${productId}`),
+};
+
+export const searchApi = {
+  getHistory: () => api.get('/search-history'),
+  clearHistory: () => api.delete('/search-history'),
+  filterProducts: (params: any) => api.get('/products/filter', { params }),
 };
 
 export default api;

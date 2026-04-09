@@ -58,8 +58,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/coupons/**").permitAll()
                         .requestMatchers("/api/reviews/**").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll() // ✅ Explicitly permit OAuth2 URLs
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()  // ✅ Allow public access to uploaded files
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/seller/**").hasAnyRole("SELLER", "ADMIN")
                         .requestMatchers("/users/profile").authenticated()

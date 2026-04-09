@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface User {
+export interface User {
   id: number;
   email: string;
   firstName: string;
@@ -10,6 +10,7 @@ interface User {
   role: string;
   phoneNumber?: string;
   isNewUser?: boolean;
+  profilePictureUrl?: string;
 }
 
 interface AuthContextType {
@@ -29,8 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    const savedToken = localStorage.getItem('token');
+    const savedUser = sessionStorage.getItem('user');
+    const savedToken = sessionStorage.getItem('token');
     
     if (savedUser && savedToken && savedToken !== 'undefined') {
       try {
@@ -38,8 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setToken(savedToken);
       } catch (error) {
         console.error('Failed to parse saved user:', error);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('token');
       }
     }
     setIsLoading(false);
@@ -48,15 +49,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = (user: User, token: string) => {
     setUser(user);
     setToken(token);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.setItem('token', token);
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('token');
   };
 
   return (

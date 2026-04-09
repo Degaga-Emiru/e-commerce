@@ -23,10 +23,12 @@ import java.util.Map;
 public class ProductController {
     private final ProductService productService;
     private final ObjectMapper objectMapper;
+    private final com.ecommerce.ecommerce.service.SearchHistoryService searchHistoryService;
 
-    public ProductController(ProductService productService, ObjectMapper objectMapper) {
+    public ProductController(ProductService productService, ObjectMapper objectMapper, com.ecommerce.ecommerce.service.SearchHistoryService searchHistoryService) {
         this.productService = productService;
         this.objectMapper = objectMapper;
+        this.searchHistoryService = searchHistoryService;
     }
     @GetMapping
     public ResponseEntity<?> getAllProducts() {
@@ -59,10 +61,43 @@ public class ProductController {
         }
     }
 
+    @GetMapping("/filter")
+    public ResponseEntity<?> getProductsFiltered(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) java.math.BigDecimal minPrice,
+            @RequestParam(required = false) java.math.BigDecimal maxPrice,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(required = false) String sortBy) {
+        try {
+            List<ProductDto> products = productService.getProductsWithFilters(
+                query, categoryId, minPrice, maxPrice, brand, minRating, sortBy
+            );
+
+            // Log search history if query is provided and user is authenticated
+            if (query != null && !query.isBlank()) {
+                logSearchQuery(query);
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("products", products);
+            response.put("count", products.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
     @GetMapping("/search")
     public ResponseEntity<?> searchProducts(@RequestParam String query) {
         try {
             List<ProductDto> products = productService.searchProducts(query);
+            
+            // Log search history if user is authenticated
+            logSearchQuery(query);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -160,13 +195,24 @@ public class ProductController {
         // ✅ Now using Spring Security's Authentication interface
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
+        if (authentication == null || !authentication.isAuthenticated() || authentication instanceof org.springframework.security.authentication.AnonymousAuthenticationToken) {
+            return null;
         }
 
         // Get the email/username from authentication and look up user ID
         String email = authentication.getName(); // ✅ This will now work
         return productService.getUserIdByEmail(email);
+    }
+
+    private void logSearchQuery(String query) {
+        try {
+            Long userId = getAuthenticatedUserId();
+            if (userId != null) {
+                searchHistoryService.saveSearch(userId, query);
+            }
+        } catch (Exception ignored) {
+            // Logging search should not fail the search request
+        }
     }
 
     @DeleteMapping("/{id}")
