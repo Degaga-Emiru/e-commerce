@@ -1,15 +1,12 @@
 version: "1"
 
-services:
-  # -------------------------
-  # PostgreSQL Database
-  # -------------------------
-  - type: psql
-    name: ecommerce-db
+databases:
+  - name: ecommerce-db
     databaseName: ecommerce_prod
     user: root
-    plan: free # Change to starter/standard for production scaling
+    plan: free
 
+services:
   # -------------------------
   # Backend Spring Boot API
   # -------------------------
@@ -17,13 +14,13 @@ services:
     name: ecommerce-api
     env: java
     rootDir: backend
-    plan: free # Change dynamically for production scaling
+    plan: free
     buildCommand: ./mvnw clean package -DskipTests
     startCommand: java -jar target/ecommerce-backend-1.0.0.jar
     autoDeploy: true
     envVars:
       - key: JAVA_VERSION
-        value: "17" # Enforcing Java 17 mapping
+        value: "17"
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: SPRING_DATASOURCE_URL
@@ -38,7 +35,6 @@ services:
         fromDatabase:
           name: ecommerce-db
           property: password
-      # Add authentic secrets directly inside Render Dashboard
       - key: JWT_SECRET
         sync: false
       - key: SMTP_PASSWORD
@@ -51,13 +47,12 @@ services:
     name: ecommerce-frontend
     env: node
     rootDir: frontend
-    plan: free # Change dynamically for production scaling
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm start
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      # Set this value inside Render Dashboard to the generated API URL (e.g. https://ecommerce-api-xyz.onrender.com/api)
       - key: NEXT_PUBLIC_API_URL
         sync: false
