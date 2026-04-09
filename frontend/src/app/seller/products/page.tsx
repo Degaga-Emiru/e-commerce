@@ -32,6 +32,7 @@ interface Product {
   imageUrl: string;
   status: string;
   category?: Category;
+  categoryName?: string;
   attributeValues?: ProductAttributeValue[];
 }
 
