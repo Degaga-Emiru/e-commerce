@@ -328,7 +328,7 @@ export default function AdminCategoriesPage() {
                     <div>
                       <h3 style={{ margin: '0 0 1rem', fontSize: 13, fontWeight: 800, color: '#64748b', display: 'flex', alignItems: 'center', gap: 8 }}>ACTIVE SCHEMA DEFINITIONS <List size={14} /></h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                         {activeCategory?.attributes?.length > 0 ? activeCategory.attributes.map(attr => (
+                         {activeCategory?.attributes && activeCategory.attributes.length > 0 ? activeCategory.attributes.map(attr => (
                            <div key={attr.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 16, padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6366f1' }}>
