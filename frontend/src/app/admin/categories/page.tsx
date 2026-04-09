@@ -161,7 +161,7 @@ export default function AdminCategoriesPage() {
                 <ArrowLeft size={14} /> Back to Dashboard
               </Link>
             </div>
-            <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, tracking: '-0.025em' }}>Category Blueprints</h1>
+            <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.025em' }}>Category Blueprints</h1>
             <p style={{ color: '#94a3b8', marginTop: '0.5rem', maxWidth: 600 }}>
               Architect the core of your marketplace. Defined categories will dynamically generate smart forms for your sellers.
             </p>
