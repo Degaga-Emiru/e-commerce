@@ -14,4 +14,4 @@ WORKDIR /app
 # Copy the built jar from the previous stage
 COPY --from=build /app/target/ecommerce-backend-1.0.0.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java -jar app.jar --spring.datasource.url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}"]
