@@ -49,6 +49,15 @@ const ProductDetails = () => {
     if (id) fetchProduct();
   }, [id, isAuthenticated]);
 
+  const refreshProductData = async () => {
+    try {
+      const res = await api.get(`/products/${id}`);
+      setProduct(res.data.product || res.data.data || res.data);
+    } catch (error) {
+      console.error('Failed to refresh product:', error);
+    }
+  };
+
   useEffect(() => {
     if (product?.variants?.length > 0) {
       if (!selectedSize && !selectedColor) {
@@ -287,7 +296,11 @@ const ProductDetails = () => {
 
         {/* Reviews */}
         <div className="bg-gray-50/50 p-12 rounded-[4rem] border border-gray-100">
-           <ProductReviews productId={product.id} canReview={canReview} />
+           <ProductReviews 
+             productId={product.id} 
+             canReview={canReview} 
+             onReviewChange={refreshProductData} 
+           />
         </div>
       </div>
     </div>

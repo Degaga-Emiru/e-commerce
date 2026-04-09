@@ -1,14 +1,17 @@
 package com.ecommerce.ecommerce.controller;
 
 import com.ecommerce.ecommerce.dto.ApiResponse;
+import com.ecommerce.ecommerce.dto.ReviewDto;
 import com.ecommerce.ecommerce.entity.Review;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.repository.UserRepository;
+import com.ecommerce.ecommerce.service.FileStorageService;
 import com.ecommerce.ecommerce.service.ReviewService;
 import com.ecommerce.ecommerce.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,33 +23,64 @@ import java.util.Map;
 public class ReviewController {
     private final ReviewService reviewService;
     private final UserRepository userRepository;
-
-    public ReviewController(ReviewService reviewService, UserRepository userRepository) {
+    private final FileStorageService fileStorageService;
+    
+    public ReviewController(ReviewService reviewService, UserRepository userRepository, FileStorageService fileStorageService) {
         this.reviewService = reviewService;
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @PostMapping
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> createReview(@RequestBody Map<String, Object> reviewRequest) {
         try {
-            Long userId = Long.valueOf(reviewRequest.get("userId").toString());
-            Long productId = Long.valueOf(reviewRequest.get("productId").toString());
-            Integer rating = Integer.valueOf(reviewRequest.get("rating").toString());
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            Long userId = user.getId();
+            
+            Long productId = reviewRequest.get("productId") != null ? 
+                    Long.valueOf(reviewRequest.get("productId").toString()) : null;
+            Integer rating = reviewRequest.get("rating") != null ? 
+                    Integer.valueOf(reviewRequest.get("rating").toString()) : null;
+            
+            if (productId == null || rating == null) {
+                return ResponseEntity.badRequest().body(new ApiResponse(false, "Product ID and rating are required"));
+            }
+
             String comment = (String) reviewRequest.get("comment");
             Long orderId = reviewRequest.get("orderId") != null ?
                     Long.valueOf(reviewRequest.get("orderId").toString()) : null;
+            
+            @SuppressWarnings("unchecked")
+            List<String> images = (List<String>) reviewRequest.get("images");
 
-            Review review = reviewService.createReview(userId, productId, rating, comment, orderId);
+            ReviewDto reviewDto = reviewService.createReview(userId, productId, rating, comment, orderId, images);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Review created successfully");
-            response.put("review", review);
+            response.put("review", reviewDto);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            e.printStackTrace(); // Log for debug
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Submit failed: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/upload")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<?> uploadImage(@RequestParam("image") MultipartFile image) {
+        try {
+            String imageUrl = fileStorageService.storeFile(image);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("imageUrl", imageUrl);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, "Upload failed: " + e.getMessage()));
         }
     }
 
@@ -63,7 +97,7 @@ public class ReviewController {
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("canReview", hasPurchased && !hasReviewed);
+            response.put("canReview", hasPurchased);
             response.put("hasPurchased", hasPurchased);
             response.put("hasReviewed", hasReviewed);
             
@@ -76,7 +110,7 @@ public class ReviewController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<?> getReviewsByProduct(@PathVariable Long productId) {
         try {
-            List<Review> reviews = reviewService.getReviewsByProduct(productId);
+            List<ReviewDto> reviews = reviewService.getReviewsByProduct(productId);
             Double averageRating = reviewService.getAverageRatingForProduct(productId);
             Long reviewCount = reviewService.getReviewCountForProduct(productId);
 
@@ -97,7 +131,7 @@ public class ReviewController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> getReviewsByUser(@PathVariable Long userId) {
         try {
-            List<Review> reviews = reviewService.getReviewsByUser(userId);
+            List<ReviewDto> reviews = reviewService.getReviewsByUser(userId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -119,7 +153,7 @@ public class ReviewController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found"));
             
-            List<Review> reviews = reviewService.getReviewsByUser(user.getId());
+            List<ReviewDto> reviews = reviewService.getReviewsByUser(user.getId());
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -140,7 +174,7 @@ public class ReviewController {
                     Integer.valueOf(updateRequest.get("rating").toString()) : null;
             String comment = (String) updateRequest.get("comment");
 
-            Review updatedReview = reviewService.updateReview(reviewId, rating, comment);
+            ReviewDto updatedReview = reviewService.updateReview(reviewId, rating, comment);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -174,8 +208,8 @@ public class ReviewController {
         try {
             Double averageRating = reviewService.getAverageRatingForProduct(productId);
             Long reviewCount = reviewService.getReviewCountForProduct(productId);
-            List<Review> topReviews = reviewService.getTopRatedReviewsForProduct(productId);
-            List<Review> verifiedReviews = reviewService.getVerifiedReviewsForProduct(productId);
+            List<ReviewDto> topReviews = reviewService.getTopRatedReviewsForProduct(productId);
+            List<ReviewDto> verifiedReviews = reviewService.getVerifiedReviewsForProduct(productId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -195,7 +229,7 @@ public class ReviewController {
     @GetMapping("/{reviewId}")
     public ResponseEntity<?> getReviewById(@PathVariable Long reviewId) {
         try {
-            Review review = reviewService.getReviewById(reviewId);
+            ReviewDto review = reviewService.getReviewDtoById(reviewId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

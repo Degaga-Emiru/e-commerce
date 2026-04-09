@@ -1,6 +1,8 @@
 package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.dto.ProductDto;
 import com.ecommerce.ecommerce.dto.ProductVariantDto;
+import com.ecommerce.ecommerce.dto.SearchSuggestionsDto;
+import com.ecommerce.ecommerce.dto.CategoryDto;
 import com.ecommerce.ecommerce.entity.Product;
 import com.ecommerce.ecommerce.entity.ProductVariant;
 import com.ecommerce.ecommerce.entity.ProductStatus;
@@ -69,6 +71,34 @@ public class ProductService {
     public List<ProductDto> searchProducts(String query) {
         List<Product> products = productRepository.searchProducts(query);
         return productMapper.toDtoList(products);
+    }
+
+    public SearchSuggestionsDto getSearchSuggestions(String query) {
+        if (query == null || query.length() < 2) {
+            return new SearchSuggestionsDto(java.util.Collections.emptyList(), java.util.Collections.emptyList());
+        }
+
+        List<Product> products = productRepository.searchProducts(query).stream()
+                .filter(p -> p.getStatus() == ProductStatus.ACTIVE)
+                .limit(5)
+                .collect(Collectors.toList());
+
+        List<Category> categories = categoryRepository.findByNameContainingIgnoreCase(query).stream()
+                .limit(5)
+                .collect(Collectors.toList());
+
+        List<ProductDto> productDtos = productMapper.toDtoList(products);
+        List<CategoryDto> categoryDtos = categories.stream()
+                .map(c -> {
+                    CategoryDto dto = new CategoryDto();
+                    dto.setId(c.getId());
+                    dto.setName(c.getName());
+                    dto.setDescription(c.getDescription());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+        return new SearchSuggestionsDto(productDtos, categoryDtos);
     }
 
     public List<ProductDto> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {

@@ -9,9 +9,11 @@ import com.ecommerce.ecommerce.repository.ReviewRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
 import com.ecommerce.ecommerce.repository.ProductRepository;
 import com.ecommerce.ecommerce.repository.OrderRepository;
+import com.ecommerce.ecommerce.mapper.ReviewMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,26 +24,31 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final ReviewMapper reviewMapper;
 
     public ReviewService(ReviewRepository reviewRepository, UserRepository userRepository,
-                         ProductRepository productRepository, OrderRepository orderRepository) {
+                         ProductRepository productRepository, OrderRepository orderRepository,
+                         ReviewMapper reviewMapper) {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
         this.orderRepository = orderRepository;
+        this.reviewMapper = reviewMapper;
     }
 
-    public Review createReview(Long userId, Long productId, Integer rating, String comment, Long orderId) {
+    public ReviewDto createReview(Long userId, Long productId, Integer rating, String comment, Long orderId, List<String> images) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         Product product = productRepository.findById(productId)
                 .orElseThrow();
 
-        // Check if user has already reviewed this product
+        // Check if user has already reviewed this product - REMOVED to allow multiple reviews
+        /*
         if (reviewRepository.findByUserIdAndProductId(userId, productId).isPresent()) {
             throw new RuntimeException("You have already reviewed this product");
         }
+        */
 
         // 🛡️ MODERATION: Only allow reviews for purchased products
         if (!orderRepository.hasPurchasedProduct(userId, productId)) {
@@ -61,6 +68,9 @@ public class ReviewService {
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
         review.setVerifiedPurchase(true); // Hardcoded to true now since we check purchase
+        if (images != null) {
+            review.setImages(images);
+        }
 
         // Optional: Link to a specific order if provided
         if (orderId != null) {
@@ -71,10 +81,12 @@ public class ReviewService {
             }
         }
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+        recalculateProductRating(productId);
+        return reviewMapper.toDto(savedReview);
     }
 
-    public Review updateReview(Long reviewId, Integer rating, String comment) {
+    public ReviewDto updateReview(Long reviewId, Integer rating, String comment) {
         Review review = getReviewById(reviewId);
 
         if (rating != null) {
@@ -90,12 +102,33 @@ public class ReviewService {
 
         review.setUpdatedAt(LocalDateTime.now());
 
-        return reviewRepository.save(review);
+        Review updatedReview = reviewRepository.save(review);
+        recalculateProductRating(review.getProduct().getId());
+        return reviewMapper.toDto(updatedReview);
     }
 
     public void deleteReview(Long reviewId) {
         Review review = getReviewById(reviewId);
+        Long productId = review.getProduct().getId();
         reviewRepository.delete(review);
+        recalculateProductRating(productId);
+    }
+
+    private void recalculateProductRating(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        Double avg = reviewRepository.findAverageRatingByProductId(productId);
+        Long count = reviewRepository.countByProductId(productId);
+
+        product.setAverageRating(avg != null ? BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO);
+        product.setReviewCount(count.intValue());
+        productRepository.save(product);
+    }
+
+    public ReviewDto getReviewDtoById(Long reviewId) {
+        Review review = getReviewById(reviewId);
+        return reviewMapper.toDto(review);
     }
 
     public Review getReviewById(Long reviewId) {
@@ -103,12 +136,12 @@ public class ReviewService {
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
     }
 
-    public List<Review> getReviewsByProduct(Long productId) {
-        return reviewRepository.findByProductId(productId);
+    public List<ReviewDto> getReviewsByProduct(Long productId) {
+        return reviewMapper.toDtoList(reviewRepository.findByProductId(productId));
     }
 
-    public List<Review> getReviewsByUser(Long userId) {
-        return reviewRepository.findByUserId(userId);
+    public List<ReviewDto> getReviewsByUser(Long userId) {
+        return reviewMapper.toDtoList(reviewRepository.findByUserId(userId));
     }
 
     public Double getAverageRatingForProduct(Long productId) {
@@ -120,12 +153,12 @@ public class ReviewService {
         return reviewRepository.countByProductId(productId);
     }
 
-    public List<Review> getTopRatedReviewsForProduct(Long productId) {
-        return reviewRepository.findTopRatedReviewsByProduct(productId);
+    public List<ReviewDto> getTopRatedReviewsForProduct(Long productId) {
+        return reviewMapper.toDtoList(reviewRepository.findTopRatedReviewsByProduct(productId));
     }
 
-    public List<Review> getVerifiedReviewsForProduct(Long productId) {
-        return reviewRepository.findVerifiedReviewsByProduct(productId);
+    public List<ReviewDto> getVerifiedReviewsForProduct(Long productId) {
+        return reviewMapper.toDtoList(reviewRepository.findVerifiedReviewsByProduct(productId));
     }
 
     public boolean hasUserReviewedProduct(Long userId, Long productId) {

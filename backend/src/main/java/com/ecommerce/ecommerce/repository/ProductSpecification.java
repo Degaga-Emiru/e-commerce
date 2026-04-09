@@ -19,12 +19,14 @@ public class ProductSpecification {
         return (root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // Search by Name or Description
+            // Search by Name, Description, or Category Name
             if (query != null && !query.isEmpty()) {
                 String searchPattern = "%" + query.toLowerCase() + "%";
+                Join<Product, Object> categoryJoin = root.join("category", JoinType.LEFT);
                 predicates.add(criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), searchPattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), searchPattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("description")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(categoryJoin.get("name")), searchPattern)
                 ));
             }
 

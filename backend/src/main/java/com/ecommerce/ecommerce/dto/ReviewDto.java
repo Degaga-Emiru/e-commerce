@@ -1,11 +1,11 @@
 package com.ecommerce.ecommerce.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ReviewDto {
     private Long id;
-    private Long userId;
-    private String userName;
+    private ReviewUserDto user;
     private Long productId;
     private String productName;
     private Long orderId;
@@ -17,8 +17,25 @@ public class ReviewDto {
     private Integer helpfulVotes;
     private Integer totalVotes;
     private Double helpfulPercentage;
-    private String ratingStars;
     private Boolean canEdit;
+    private List<String> images;
+
+    public static class ReviewUserDto {
+        private Long id;
+        private String firstName;
+        private String lastName;
+        private String profilePictureUrl;
+
+        // Getters and Setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+        public String getProfilePictureUrl() { return profilePictureUrl; }
+        public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+    }
 
     // Constructors
     public ReviewDto() {}
@@ -27,11 +44,8 @@ public class ReviewDto {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
-
-    public String getUserName() { return userName; }
-    public void setUserName(String userName) { this.userName = userName; }
+    public ReviewUserDto getUser() { return user; }
+    public void setUser(ReviewUserDto user) { this.user = user; }
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -66,9 +80,10 @@ public class ReviewDto {
     public Double getHelpfulPercentage() { return helpfulPercentage; }
     public void setHelpfulPercentage(Double helpfulPercentage) { this.helpfulPercentage = helpfulPercentage; }
 
-    public String getRatingStars() { return ratingStars; }
-    public void setRatingStars(String ratingStars) { this.ratingStars = ratingStars; }
 
     public Boolean getCanEdit() { return canEdit; }
     public void setCanEdit(Boolean canEdit) { this.canEdit = canEdit; }
+
+    public List<String> getImages() { return images; }
+    public void setImages(List<String> images) { this.images = images; }
 }

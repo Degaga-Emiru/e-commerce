@@ -55,6 +55,7 @@ export const searchApi = {
   getHistory: () => api.get('/search-history'),
   clearHistory: () => api.delete('/search-history'),
   filterProducts: (params: any) => api.get('/products/filter', { params }),
+  getSuggestions: (query: string) => api.get('/products/search/suggestions', { params: { query } }),
 };
 
 export default api;

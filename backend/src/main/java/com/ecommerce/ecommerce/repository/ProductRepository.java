@@ -17,7 +17,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     List<Product> findBySellerId(Long sellerId);
     List<Product> findByNameContainingIgnoreCase(String name);
 
-    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Product> searchProducts(@Param("query") String query);
 
     @Query("SELECT p FROM Product p WHERE p.price BETWEEN :minPrice AND :maxPrice")

@@ -36,7 +36,9 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    const newFilters = { ...filters, query: initialQuery };
+    // If query is present, use it. If empty, it will trigger the "Reset Behavior"
+    // by fetching with an empty query (which backend filter handles by returning all)
+    const newFilters = { ...filters, query: initialQuery || '' };
     setFilters(newFilters);
     fetchProducts(newFilters);
   }, [initialQuery]);

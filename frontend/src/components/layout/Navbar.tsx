@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, User, Search, Menu, BarChart2, Store, Ticket, Sparkles, Heart, Zap } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, BarChart2, Store, Ticket, Sparkles, Heart, Zap, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -22,6 +22,8 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showSuggestions, setShowSuggestions] = React.useState(false);
   const [history, setHistory] = React.useState<any[]>([]);
+  const [liveSuggestions, setLiveSuggestions] = React.useState<{ products: any[], categories: any[] }>({ products: [], categories: [] });
+  const [fetchingSuggestions, setFetchingSuggestions] = React.useState(false);
   const searchRef = React.useRef<HTMLDivElement>(null);
   
   const handleSearch = (e: React.FormEvent) => {
@@ -36,7 +38,9 @@ const Navbar = () => {
     if (isAuthenticated) {
       try {
         const response = await searchApi.getHistory();
-        setHistory(response.data.slice(0, 5) || []);
+        // Backend returns ApiResponse<List<SearchHistoryDto>>, so we access .data.data
+        const historyData = response.data.data || [];
+        setHistory(Array.isArray(historyData) ? historyData.slice(0, 5) : []);
       } catch (error) {
         console.error('Error fetching search history:', error);
       }
@@ -52,6 +56,52 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  React.useEffect(() => {
+    // Dynamic Real-Time Search Redirect
+    if (searchQuery.trim().length > 0) {
+      const isSearchPage = pathname === '/search' || pathname === '/products';
+      
+      const timeoutId = setTimeout(() => {
+        if (!isSearchPage) {
+          router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        } else {
+          // If already on search/products page, update the URL query param
+          const params = new URLSearchParams(window.location.search);
+          params.set('q', searchQuery.trim());
+          router.replace(`${pathname}?${params.toString()}`);
+        }
+      }, 400); // 400ms debounce for redirect
+
+      return () => clearTimeout(timeoutId);
+    } else if (searchQuery === '' && (pathname === '/search' || pathname === '/products')) {
+      // Auto-Reset behavior: If input is cleared, remove the query param
+      router.replace(pathname);
+    }
+  }, [searchQuery, pathname, router]);
+
+  React.useEffect(() => {
+    if (searchQuery.length < 1) {
+      setLiveSuggestions({ products: [], categories: [] });
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      setFetchingSuggestions(true);
+      try {
+        const res = await searchApi.getSuggestions(searchQuery);
+        if (res.data.success) {
+          setLiveSuggestions(res.data.suggestions);
+        }
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      } finally {
+        setFetchingSuggestions(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
   
   const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/verify-otp';
 
@@ -117,15 +167,68 @@ const Navbar = () => {
                   </div>
                 )}
                 
-                {searchQuery.length > 2 && (
-                  <div className="p-4 bg-gray-50/50">
-                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block px-2">Quick Results</span>
+                {searchQuery.length > 1 && (
+                  <div className="p-4 bg-gray-50/50 space-y-4">
+                     {/* Category Suggestions */}
+                     {liveSuggestions.categories.length > 0 && (
+                       <div>
+                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-2">Top Categories</span>
+                         <div className="space-y-1">
+                           {liveSuggestions.categories.map((cat: any) => (
+                             <div 
+                               key={cat.id}
+                               onClick={() => {
+                                 router.push(`/products?categoryId=${cat.id}`);
+                                 setShowSuggestions(false);
+                               }}
+                               className="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer text-gray-900 transition-all"
+                             >
+                               <Menu size={14} className="text-orange-500" />
+                               <span className="text-sm font-bold">{cat.name}</span>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+
+                     {/* Product Suggestions */}
+                     {liveSuggestions.products.length > 0 && (
+                       <div>
+                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block px-2">Products</span>
+                         <div className="space-y-1">
+                           {liveSuggestions.products.map((prod: any) => (
+                             <div 
+                               key={prod.id}
+                               onClick={() => {
+                                 router.push(`/product/${prod.id}`);
+                                 setShowSuggestions(false);
+                               }}
+                               className="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer text-gray-900 transition-all"
+                             >
+                               <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex-shrink-0 flex items-center justify-center p-1">
+                                 {prod.imageUrl ? (
+                                   <img src={getImageUrl(prod.imageUrl)} alt="" className="w-full h-full object-contain" />
+                                 ) : (
+                                   <Sparkles size={12} className="text-orange-400" />
+                                 )}
+                               </div>
+                               <div className="flex flex-col">
+                                 <span className="text-sm font-bold line-clamp-1">{prod.name}</span>
+                                 <span className="text-[10px] font-black text-orange-500 uppercase tracking-tighter">${prod.price}</span>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
+
                      <div 
                        onClick={handleSearch}
-                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer text-gray-900 transition-all font-bold"
+                       className="flex items-center gap-3 p-3 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer text-gray-900 transition-all font-bold border-t border-gray-100 pt-4"
                      >
                        <Zap size={14} className="text-orange-500" />
                        <span className="text-sm italic">Search for "{searchQuery}"</span>
+                       {fetchingSuggestions && <Loader2 size={14} className="animate-spin ml-auto text-gray-300" />}
                      </div>
                   </div>
                 )}

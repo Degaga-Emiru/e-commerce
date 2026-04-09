@@ -66,6 +66,12 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<ProductVariant> variants = new ArrayList<>();
 
+    @Column(name = "average_rating", precision = 3, scale = 2)
+    private BigDecimal averageRating = BigDecimal.ZERO;
+
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -134,6 +140,12 @@ public class Product {
 
     public List<ProductVariant> getVariants() { return variants; }
     public void setVariants(List<ProductVariant> variants) { this.variants = variants; }
+
+    public BigDecimal getAverageRating() { return averageRating; }
+    public void setAverageRating(BigDecimal averageRating) { this.averageRating = averageRating; }
+
+    public Integer getReviewCount() { return reviewCount; }
+    public void setReviewCount(Integer reviewCount) { this.reviewCount = reviewCount; }
 
     public String getBrand() { return brand; }
     public void setBrand(String brand) { this.brand = brand; }

@@ -19,6 +19,9 @@ export default function ProductsPage() {
     sortBy: 'newest'
   });
 
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialQuery = searchParams?.get('q') || '';
+
   const fetchProducts = async (currentFilters: any) => {
     setLoading(true);
     try {
@@ -32,12 +35,23 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    fetchProducts(filters);
-  }, []);
+    const newFilters = { ...filters, query: initialQuery };
+    setFilters(newFilters);
+    fetchProducts(newFilters);
+  }, [initialQuery]);
 
   const handleFilterChange = (newFilters: any) => {
     const updated = { ...filters, ...newFilters };
     setFilters(updated);
+    
+    // Update URL if query changed manually in the local input
+    if (newFilters.query !== undefined) {
+      const params = new URLSearchParams(window.location.search);
+      if (newFilters.query) params.set('q', newFilters.query);
+      else params.delete('q');
+      window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+    }
+    
     fetchProducts(updated);
   };
 

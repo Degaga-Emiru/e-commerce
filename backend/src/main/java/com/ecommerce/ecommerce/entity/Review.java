@@ -1,6 +1,9 @@
 package com.ecommerce.ecommerce.entity;
+
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reviews")
@@ -47,6 +50,11 @@ public class Review {
 
     @Column(name = "admin_notes")
     private String adminNotes;
+
+    @ElementCollection
+    @CollectionTable(name = "review_images", joinColumns = @JoinColumn(name = "review_id"))
+    @Column(name = "image_url")
+    private List<String> images = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
@@ -219,6 +227,14 @@ public class Review {
 
     public void setAdminNotes(String adminNotes) {
         this.adminNotes = adminNotes;
+    }
+
+    public List<String> getImages() {
+        return images;
+    }
+
+    public void setImages(List<String> images) {
+        this.images = images;
     }
 
     // Utility methods

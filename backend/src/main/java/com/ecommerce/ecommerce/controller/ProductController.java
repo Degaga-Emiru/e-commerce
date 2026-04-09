@@ -1,6 +1,7 @@
 package com.ecommerce.ecommerce.controller;
 
 import com.ecommerce.ecommerce.dto.ProductDto;
+import com.ecommerce.ecommerce.dto.SearchSuggestionsDto;
 import com.ecommerce.ecommerce.entity.Product;
 import com.ecommerce.ecommerce.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -105,6 +106,19 @@ public class ProductController {
             response.put("query", query);
             response.put("count", products.size());
 
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/search/suggestions")
+    public ResponseEntity<?> getSearchSuggestions(@RequestParam String query) {
+        try {
+            SearchSuggestionsDto suggestions = productService.getSearchSuggestions(query);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("suggestions", suggestions);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
