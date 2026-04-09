@@ -3,14 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Minus, Plus, Loader2 } from 'lucide-react';
+import { Star, ShieldCheck, Truck, RefreshCw, ShoppingCart, Minus, Plus, Loader2, Zap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import api from '@/services/api';
 import ProductReviews from '@/components/product/ProductReviews';
+import ProductCard from '@/components/product/ProductCard';
 
 const ProductDetails = () => {
   const { id } = useParams();
+  const router = useRouter();
   const { addToCart } = useCart();
   const { isAuthenticated, user } = useAuth();
   const isNewUser = user?.isNewUser;
