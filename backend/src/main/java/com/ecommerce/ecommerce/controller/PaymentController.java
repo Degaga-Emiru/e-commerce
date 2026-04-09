@@ -27,15 +27,18 @@ public class PaymentController {
     private final ChapaService chapaService;
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
+    private final com.ecommerce.ecommerce.service.UserService userService;
 
     public PaymentController(PaymentService paymentService, 
                              ChapaService chapaService, 
                              OrderRepository orderRepository,
-                             PaymentRepository paymentRepository) {
+                             PaymentRepository paymentRepository,
+                             com.ecommerce.ecommerce.service.UserService userService) {
         this.paymentService = paymentService;
         this.chapaService = chapaService;
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
+        this.userService = userService;
     }
 
     @PostMapping("/initialize")
@@ -87,5 +90,20 @@ public class PaymentController {
             logger.error("Error verifying payment for {}: {}", orderNumber, e.getMessage());
             return ResponseEntity.badRequest().body(new com.ecommerce.ecommerce.dto.ApiResponse(false, e.getMessage()));
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyPayments() {
+        org.springframework.security.core.Authentication authentication = 
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(new com.ecommerce.ecommerce.dto.ApiResponse(false, "Not authenticated"));
+        }
+
+        String email = authentication.getName();
+        Long userId = userService.getUserIdByEmail(email);
+        
+        return ResponseEntity.ok(paymentService.getPaymentsByUserId(userId));
     }
 }

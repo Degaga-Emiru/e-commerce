@@ -29,14 +29,14 @@ const LoginPage = () => {
       // Set the token in the API header temporarily to fetch /me
       api.defaults.headers.common['Authorization'] = `Bearer ${jwt}`;
       const response = await api.get('/auth/me');
-      
       const userData = {
         id: response.data.id,
         email: response.data.email,
         firstName: response.data.firstName,
         lastName: response.data.lastName,
         role: response.data.role,
-        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false
+        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false,
+        profilePictureUrl: response.data.profilePictureUrl
       };
       
       login(userData, jwt);
@@ -56,15 +56,14 @@ const LoginPage = () => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token } = response.data;
-      
-      // Explicitly map user data including isNewUser flag
       const userData = {
         id: response.data.id,
         email: response.data.email,
         firstName: response.data.firstName,
         lastName: response.data.lastName,
         role: response.data.role,
-        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false
+        isNewUser: response.data.isNewUser ?? response.data.newUser ?? false,
+        profilePictureUrl: response.data.profilePictureUrl
       };
       
       login(userData, token);

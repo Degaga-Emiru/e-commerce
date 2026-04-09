@@ -14,6 +14,7 @@ public class AuthResponse {
     private String role;
     @JsonProperty("isNewUser")
     private boolean isNewUser;
+    private String profilePictureUrl;
     private Collection<String> authorities;
 
     public AuthResponse() {}
@@ -28,7 +29,7 @@ public class AuthResponse {
         }
     }
 
-    public AuthResponse(String token, Long id, String email, String firstName, String lastName, String role, boolean isNewUser) {
+    public AuthResponse(String token, Long id, String email, String firstName, String lastName, String role, boolean isNewUser, String profilePictureUrl) {
         this.token = token;
         this.id = id;
         this.email = email;
@@ -36,6 +37,7 @@ public class AuthResponse {
         this.lastName = lastName;
         this.role = role;
         this.isNewUser = isNewUser;
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     // Getters and Setters
@@ -59,6 +61,9 @@ public class AuthResponse {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 
     @JsonProperty("isNewUser")
     public boolean isNewUser() { return isNewUser; }

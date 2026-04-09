@@ -108,7 +108,7 @@ public class AuthController {
             boolean isNewUser = orderRepository.countByUserId(user.getId()) == 0;
             
             AuthResponse authResponse = new AuthResponse(jwt, user.getId(), user.getEmail(),
-                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUser);
+                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUser, user.getProfilePictureUrl());
 
             return ResponseEntity.ok(authResponse);
 
@@ -199,7 +199,7 @@ public class AuthController {
             
             boolean isNewUserMe = orderRepository.countByUserId(user.getId()) == 0;
             AuthResponse authResponse = new AuthResponse(null, user.getId(), user.getEmail(),
-                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUserMe);
+                    user.getFirstName(), user.getLastName(), user.getRole().name(), isNewUserMe, user.getProfilePictureUrl());
             
             return ResponseEntity.ok(authResponse);
         } catch (Exception e) {

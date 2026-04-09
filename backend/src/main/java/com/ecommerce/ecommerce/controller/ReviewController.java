@@ -111,6 +111,27 @@ public class ReviewController {
         }
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getMyReviews() {
+        try {
+            String email = SecurityUtils.getCurrentUserEmail();
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            List<Review> reviews = reviewService.getReviewsByUser(user.getId());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("reviews", reviews);
+            response.put("count", reviews.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
     @PutMapping("/{reviewId}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> updateReview(@PathVariable Long reviewId, @RequestBody Map<String, Object> updateRequest) {

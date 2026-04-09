@@ -10,6 +10,8 @@ import com.ecommerce.ecommerce.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 @Service
 @Transactional
 public class PaymentService {
@@ -86,6 +88,13 @@ public class PaymentService {
         Payment payment = paymentRepository.findByTransactionId(transactionId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
         return buildPaymentResponse(payment, "Payment retrieved");
+    }
+
+    // Get payments for current user
+    public List<PaymentResponse> getPaymentsByUserId(Long userId) {
+        return paymentRepository.findByOrderUserId(userId).stream()
+                .map(p -> buildPaymentResponse(p, "Transaction found"))
+                .collect(Collectors.toList());
     }
 
     // Build PaymentResponse DTO
