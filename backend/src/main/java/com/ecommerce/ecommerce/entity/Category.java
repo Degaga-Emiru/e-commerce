@@ -25,6 +25,14 @@ public class Category {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    @JsonIgnore
+    private Category parentCategory;
+
+    @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Category> subCategories = new ArrayList<>();
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     //@JsonIgnore
     private List<Product> products = new ArrayList<>();
@@ -69,4 +77,10 @@ public class Category {
 
     public List<Product> getProducts() { return products; }
     public void setProducts(List<Product> products) { this.products = products; }
+
+    public Category getParentCategory() { return parentCategory; }
+    public void setParentCategory(Category parentCategory) { this.parentCategory = parentCategory; }
+
+    public List<Category> getSubCategories() { return subCategories; }
+    public void setSubCategories(List<Category> subCategories) { this.subCategories = subCategories; }
 }

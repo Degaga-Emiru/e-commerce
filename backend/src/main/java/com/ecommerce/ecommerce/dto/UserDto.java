@@ -8,6 +8,7 @@ public class UserDto {
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private String profilePictureUrl;
     private UserRole role;
     private boolean enabled;
     private LocalDateTime createdAt;
@@ -44,6 +45,9 @@ public class UserDto {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 
     public UserRole getRole() { return role; }
     public void setRole(UserRole role) { this.role = role; }

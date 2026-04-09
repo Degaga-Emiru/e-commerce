@@ -157,6 +157,7 @@ public class UserController {
         dto.setEnabled(user.isEnabled());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setProfilePictureUrl(user.getProfilePictureUrl());
         return dto;
     }
 

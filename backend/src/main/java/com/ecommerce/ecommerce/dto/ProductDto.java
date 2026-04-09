@@ -10,6 +10,9 @@ public class ProductDto {
     private String description;
     private BigDecimal price;
     private Integer stockQuantity;
+    private String brand;
+    private BigDecimal discountPrice;
+    private LocalDateTime flashSaleExpiry;
     private String imageUrl;
     private Long categoryId;
     private String categoryName;
@@ -72,4 +75,13 @@ public class ProductDto {
 
     public List<ProductVariantDto> getVariants() { return variants; }
     public void setVariants(List<ProductVariantDto> variants) { this.variants = variants; }
+
+    public String getBrand() { return brand; }
+    public void setBrand(String brand) { this.brand = brand; }
+
+    public BigDecimal getDiscountPrice() { return discountPrice; }
+    public void setDiscountPrice(BigDecimal discountPrice) { this.discountPrice = discountPrice; }
+
+    public LocalDateTime getFlashSaleExpiry() { return flashSaleExpiry; }
+    public void setFlashSaleExpiry(LocalDateTime flashSaleExpiry) { this.flashSaleExpiry = flashSaleExpiry; }
 }

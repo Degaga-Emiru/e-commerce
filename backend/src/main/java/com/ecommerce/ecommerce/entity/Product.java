@@ -25,6 +25,14 @@ public class Product {
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
+    private String brand;
+
+    @Column(name = "discount_price", precision = 10, scale = 2)
+    private BigDecimal discountPrice;
+
+    @Column(name = "flash_sale_expiry")
+    private LocalDateTime flashSaleExpiry;
+
     @Column(name = "image_url")
     private String imageUrl;
 
@@ -126,4 +134,13 @@ public class Product {
 
     public List<ProductVariant> getVariants() { return variants; }
     public void setVariants(List<ProductVariant> variants) { this.variants = variants; }
+
+    public String getBrand() { return brand; }
+    public void setBrand(String brand) { this.brand = brand; }
+
+    public BigDecimal getDiscountPrice() { return discountPrice; }
+    public void setDiscountPrice(BigDecimal discountPrice) { this.discountPrice = discountPrice; }
+
+    public LocalDateTime getFlashSaleExpiry() { return flashSaleExpiry; }
+    public void setFlashSaleExpiry(LocalDateTime flashSaleExpiry) { this.flashSaleExpiry = flashSaleExpiry; }
 }

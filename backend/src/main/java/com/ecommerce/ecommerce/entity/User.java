@@ -31,6 +31,9 @@ public class User {
     @Column(name = "phone_number")
     private String phoneNumber;
 
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.CUSTOMER;
@@ -145,4 +148,7 @@ public class User {
     public void setBankAccount(BankAccount bankAccount) {
         this.bankAccount = bankAccount;
     }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
 }

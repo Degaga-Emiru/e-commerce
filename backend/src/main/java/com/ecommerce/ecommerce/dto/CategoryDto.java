@@ -9,6 +9,8 @@ public class CategoryDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer productCount;
+    private Long parentId;
+    private java.util.List<CategoryDto> subCategories;
 
     public CategoryDto() {}
 
@@ -33,4 +35,10 @@ public class CategoryDto {
 
     public Integer getProductCount() { return productCount; }
     public void setProductCount(Integer productCount) { this.productCount = productCount; }
+
+    public Long getParentId() { return parentId; }
+    public void setParentId(Long parentId) { this.parentId = parentId; }
+
+    public java.util.List<CategoryDto> getSubCategories() { return subCategories; }
+    public void setSubCategories(java.util.List<CategoryDto> subCategories) { this.subCategories = subCategories; }
 }
