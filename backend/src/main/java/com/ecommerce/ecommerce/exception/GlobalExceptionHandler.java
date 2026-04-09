@@ -21,6 +21,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        ex.printStackTrace();
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -34,12 +35,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); // Added logging
         ApiResponse response = new ApiResponse(false, ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneralException(Exception ex) {
+        ex.printStackTrace(); // Added logging
         ApiResponse response = new ApiResponse(false, "An error occurred: " + ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }

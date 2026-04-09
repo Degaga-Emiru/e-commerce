@@ -19,6 +19,7 @@ public class WithdrawalRequest {
     @Column(nullable = false)
     private WithdrawalStatus status = WithdrawalStatus.PENDING;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;

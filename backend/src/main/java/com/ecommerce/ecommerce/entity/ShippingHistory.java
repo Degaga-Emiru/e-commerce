@@ -11,6 +11,7 @@ public class ShippingHistory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shipping_id", nullable = false)
     private Shipping shipping;
