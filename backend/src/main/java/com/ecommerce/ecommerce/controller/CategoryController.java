@@ -169,4 +169,38 @@ public class CategoryController {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         }
     }
+
+    // Dynamic Attribute Management Endpoints
+    @PostMapping("/{id}/attributes")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> addAttribute(@PathVariable Long id, @RequestBody com.ecommerce.ecommerce.entity.CategoryAttribute attribute) {
+        try {
+            var saved = categoryService.addAttribute(id, attribute);
+            return ResponseEntity.ok(new ApiResponse(true, "Attribute added", saved));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PutMapping("/attributes/{attrId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateAttribute(@PathVariable Long attrId, @RequestBody com.ecommerce.ecommerce.entity.CategoryAttribute attribute) {
+        try {
+            var updated = categoryService.updateAttribute(attrId, attribute);
+            return ResponseEntity.ok(new ApiResponse(true, "Attribute updated", updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/attributes/{attrId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteAttribute(@PathVariable Long attrId) {
+        try {
+            categoryService.deleteAttribute(attrId);
+            return ResponseEntity.ok(new ApiResponse(true, "Attribute deleted"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
 }

@@ -66,6 +66,9 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<ProductVariant> variants = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<ProductAttributeValue> attributeValues = new ArrayList<>();
+
     @Column(name = "average_rating", precision = 3, scale = 2)
     private BigDecimal averageRating = BigDecimal.ZERO;
 
@@ -155,4 +158,7 @@ public class Product {
 
     public LocalDateTime getFlashSaleExpiry() { return flashSaleExpiry; }
     public void setFlashSaleExpiry(LocalDateTime flashSaleExpiry) { this.flashSaleExpiry = flashSaleExpiry; }
+
+    public List<ProductAttributeValue> getAttributeValues() { return attributeValues; }
+    public void setAttributeValues(List<ProductAttributeValue> attributeValues) { this.attributeValues = attributeValues; }
 }

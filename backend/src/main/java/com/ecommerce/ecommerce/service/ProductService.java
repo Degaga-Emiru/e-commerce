@@ -1,15 +1,20 @@
 package com.ecommerce.ecommerce.service;
 import com.ecommerce.ecommerce.dto.ProductDto;
 import com.ecommerce.ecommerce.dto.ProductVariantDto;
+import com.ecommerce.ecommerce.dto.ProductAttributeValueDto;
 import com.ecommerce.ecommerce.dto.SearchSuggestionsDto;
 import com.ecommerce.ecommerce.dto.CategoryDto;
 import com.ecommerce.ecommerce.entity.Product;
 import com.ecommerce.ecommerce.entity.ProductVariant;
+import com.ecommerce.ecommerce.entity.ProductAttributeValue;
 import com.ecommerce.ecommerce.entity.ProductStatus;
 import com.ecommerce.ecommerce.entity.User;
 import com.ecommerce.ecommerce.entity.Category;
+import com.ecommerce.ecommerce.entity.CategoryAttribute;
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 import com.ecommerce.ecommerce.mapper.ProductMapper;
+import com.ecommerce.ecommerce.repository.CategoryAttributeRepository;
+import com.ecommerce.ecommerce.repository.ProductAttributeValueRepository;
 import com.ecommerce.ecommerce.repository.ProductRepository;
 import com.ecommerce.ecommerce.repository.CategoryRepository;
 import com.ecommerce.ecommerce.repository.UserRepository;
@@ -29,21 +34,26 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final CategoryAttributeRepository categoryAttributeRepository;
+    private final ProductAttributeValueRepository productAttributeValueRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
     private final ProductMapper productMapper;
     private final EmailService emailService;
 
-    public ProductService(ProductRepository productRepository,EmailService emailService, CategoryRepository categoryRepository,
+    public ProductService(ProductRepository productRepository, EmailService emailService, CategoryRepository categoryRepository,
+                          CategoryAttributeRepository categoryAttributeRepository,
+                          ProductAttributeValueRepository productAttributeValueRepository,
                           UserRepository userRepository, FileStorageService fileStorageService,
                           ProductMapper productMapper) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
+        this.categoryAttributeRepository = categoryAttributeRepository;
+        this.productAttributeValueRepository = productAttributeValueRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
         this.productMapper = productMapper;
         this.emailService = emailService;
-
     }
 
     // ✅ GET METHODS - Return ProductDto
@@ -184,6 +194,21 @@ public class ProductService {
             product.setStockQuantity(totalStock);
         }
 
+        // Handle Dynamic Attributes
+        if (productDto.getAttributeValues() != null && !productDto.getAttributeValues().isEmpty()) {
+            List<ProductAttributeValue> attributeValues = productDto.getAttributeValues().stream()
+                    .map(avDto -> {
+                        ProductAttributeValue av = productMapper.toAttributeValueEntity(avDto);
+                        av.setProduct(product);
+                        CategoryAttribute attr = categoryAttributeRepository.findById(avDto.getAttributeId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found: " + avDto.getAttributeId()));
+                        av.setAttribute(attr);
+                        return av;
+                    })
+                    .collect(Collectors.toList());
+            product.setAttributeValues(attributeValues);
+        }
+
         Product savedProduct = productRepository.save(product);
         try { emailService.sendNewProductNotification(savedProduct); } catch (Exception ignored) {}
 
@@ -266,6 +291,20 @@ public class ProductService {
             // Auto-calculate total stock from variants
             int totalStock = currentVariants.stream().mapToInt(ProductVariant::getStockQuantity).sum();
             existingProduct.setStockQuantity(totalStock);
+        }
+
+        // Handle Dynamic Attributes Update
+        if (productDto.getAttributeValues() != null) {
+            // Simple approach for now: clear and re-add
+            existingProduct.getAttributeValues().clear();
+            for (ProductAttributeValueDto avDto : productDto.getAttributeValues()) {
+                ProductAttributeValue av = productMapper.toAttributeValueEntity(avDto);
+                av.setProduct(existingProduct);
+                CategoryAttribute attr = categoryAttributeRepository.findById(avDto.getAttributeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Attribute not found: " + avDto.getAttributeId()));
+                av.setAttribute(attr);
+                existingProduct.getAttributeValues().add(av);
+            }
         }
 
         Product updatedProduct = productRepository.save(existingProduct);

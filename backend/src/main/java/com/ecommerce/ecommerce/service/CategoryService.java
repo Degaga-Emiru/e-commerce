@@ -14,23 +14,34 @@ import java.util.List;
 @Transactional
 public class CategoryService {
     private final CategoryRepository categoryRepository;
+    private final com.ecommerce.ecommerce.repository.CategoryAttributeRepository attributeRepository;
     private final ProductRepository productRepository;
     private final FileStorageService fileStorageService;
 
-    public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository,
+    public CategoryService(CategoryRepository categoryRepository, 
+                           com.ecommerce.ecommerce.repository.CategoryAttributeRepository attributeRepository,
+                           ProductRepository productRepository,
                            FileStorageService fileStorageService) {
         this.categoryRepository = categoryRepository;
+        this.attributeRepository = attributeRepository;
         this.productRepository = productRepository;
         this.fileStorageService = fileStorageService;
     }
 
     public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+        List<Category> categories = categoryRepository.findAll();
+        // Initialize lazy collections within transaction
+        categories.forEach(c -> {
+            if (c.getAttributes() != null) c.getAttributes().size();
+        });
+        return categories;
     }
 
     public Category getCategoryById(Long id) {
-        return categoryRepository.findById(id)
+        Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with id: " + id));
+        if (category.getAttributes() != null) category.getAttributes().size();
+        return category;
     }
 
     public Category createCategory(Category category, MultipartFile imageFile) {
@@ -86,5 +97,26 @@ public class CategoryService {
 
     public Long getProductCountByCategory(Long categoryId) {
         return productRepository.countByCategoryId(categoryId);
+    }
+
+    // Dynamic Attribute Management
+    public com.ecommerce.ecommerce.entity.CategoryAttribute addAttribute(Long categoryId, com.ecommerce.ecommerce.entity.CategoryAttribute attr) {
+        Category category = getCategoryById(categoryId);
+        attr.setCategory(category);
+        return attributeRepository.save(attr);
+    }
+
+    public com.ecommerce.ecommerce.entity.CategoryAttribute updateAttribute(Long attrId, com.ecommerce.ecommerce.entity.CategoryAttribute details) {
+        com.ecommerce.ecommerce.entity.CategoryAttribute attr = attributeRepository.findById(attrId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attribute not found"));
+        attr.setName(details.getName());
+        attr.setType(details.getType());
+        attr.setRequired(details.isRequired());
+        attr.setOptions(details.getOptions());
+        return attributeRepository.save(attr);
+    }
+
+    public void deleteAttribute(Long attrId) {
+        attributeRepository.deleteById(attrId);
     }
 }

@@ -1,6 +1,7 @@
 package com.ecommerce.ecommerce.mapper;
 
 import com.ecommerce.ecommerce.dto.CategoryDto;
+import com.ecommerce.ecommerce.dto.CategoryAttributeDto;
 import com.ecommerce.ecommerce.entity.Category;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,20 @@ public class CategoryMapper {
         if (category.getSubCategories() != null && !category.getSubCategories().isEmpty()) {
             dto.setSubCategories(category.getSubCategories().stream()
                     .map(CategoryMapper::toDto)
+                    .collect(Collectors.toList()));
+        }
+
+        if (category.getAttributes() != null) {
+            dto.setAttributes(category.getAttributes().stream()
+                    .map(attr -> {
+                        CategoryAttributeDto aDto = new CategoryAttributeDto();
+                        aDto.setId(attr.getId());
+                        aDto.setName(attr.getName());
+                        aDto.setType(attr.getType());
+                        aDto.setRequired(attr.isRequired());
+                        aDto.setOptions(attr.getOptions());
+                        return aDto;
+                    })
                     .collect(Collectors.toList()));
         }
         

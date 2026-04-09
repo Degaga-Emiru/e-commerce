@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   BarChart2, Users, ShoppingBag, DollarSign, Package, Truck,
   Shield, Bell, Settings, Store, CheckCircle, RefreshCw,
-  Lock, Unlock, TrendingUp, Send, Search, ExternalLink,
+  Lock, Unlock, TrendingUp, Send, Search, ExternalLink, Tag,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -67,6 +67,7 @@ const TABS = [
   { id: 'withdrawals',   label: 'Withdrawals',     icon: DollarSign  },
   { id: 'notifications', label: 'Notifications',   icon: Bell        },
   { id: 'settings',      label: 'Settings',        icon: Settings    },
+  { id: 'categories',    label: 'Categories',      icon: Tag,        href: '/admin/categories' },
 ];
 
 // Extract data from any response shape
@@ -903,15 +904,8 @@ export default function AdminDashboard() {
         {TABS.map(t => {
           const Icon = t.icon;
           const active = tab === t.id;
-          return (
-            <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); setStatusFilter('ALL'); }} style={{
-              display: 'flex', alignItems: 'center', gap: 9, padding: '0.7rem 0.875rem',
-              borderRadius: 11, cursor: 'pointer', fontSize: 13, textAlign: 'left',
-              background: active ? 'rgba(99,102,241,0.18)' : 'transparent',
-              border: active ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
-              color: active ? '#a5b4fc' : '#94a3b8', fontWeight: active ? 700 : 500,
-              transition: 'all 0.15s',
-            }}>
+          const content = (
+            <>
               <Icon size={17} />
               {t.label}
               {t.id === 'orders' && (stats?.pendingOrders ?? 0) > 0 && (
@@ -919,6 +913,29 @@ export default function AdminDashboard() {
                   {stats?.pendingOrders}
                 </span>
               )}
+            </>
+          );
+          
+          const tabStyle: React.CSSProperties = {
+            display: 'flex', alignItems: 'center', gap: 9, padding: '0.7rem 0.875rem',
+            borderRadius: 11, cursor: 'pointer', fontSize: 13, textAlign: 'left',
+            background: active ? 'rgba(99,102,241,0.18)' : 'transparent',
+            border: active ? '1px solid rgba(99,102,241,0.3)' : '1px solid transparent',
+            color: active ? '#a5b4fc' : '#94a3b8', fontWeight: active ? 700 : 500,
+            transition: 'all 0.15s', width: '100%', textDecoration: 'none', boxSizing: 'border-box'
+          };
+
+          if ((t as any).href) {
+            return (
+              <Link key={t.id} href={(t as any).href} style={tabStyle}>
+                {content}
+              </Link>
+            );
+          }
+
+          return (
+            <button key={t.id} onClick={() => { setTab(t.id); setSearch(''); setStatusFilter('ALL'); }} style={tabStyle}>
+              {content}
             </button>
           );
         })}

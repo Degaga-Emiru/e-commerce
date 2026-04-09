@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import Link from 'next/link';
-import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight, Ticket, Timer } from 'lucide-react';
+import { Truck, ShieldCheck, Headphones, Zap, ArrowRight, Star, ChevronLeft, ChevronRight, Ticket, Timer, Laptop, Disc, ShoppingBag, Dumbbell, Home as HomeIcon, HeartPulse, Baby, Gem, Briefcase, Car, Stethoscope, Eraser, Sofa, Apple, ShoppingCart, Book } from 'lucide-react';
 import CountdownTimer from '@/components/product/CountdownTimer';
 import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
@@ -51,6 +51,7 @@ const MOCK_PRODUCTS = [
 export default function Home() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [newArrivals, setNewArrivals] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentHero, setCurrentHero] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -68,17 +69,19 @@ export default function Home() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [featuredRes, productsRes] = await Promise.all([
+        const [featuredRes, productsRes, categoriesRes] = await Promise.all([
           api.get('/products/featured'),
-          api.get('/products')
+          api.get('/products'),
+          api.get('/categories')
         ]);
         
-        const featured = featuredRes.data.products || [];
-        const arrivals = productsRes.data.products || [];
+        const featured = featuredRes.data.products || featuredRes.data.data || [];
+        const arrivals = productsRes.data.products || productsRes.data.data || [];
+        const cats = categoriesRes.data.categories || categoriesRes.data.data || (Array.isArray(categoriesRes.data) ? categoriesRes.data : []);
 
-        // Combine with mock if short (to reach 25+)
         setFeaturedProducts(featured.length >= 25 ? featured : [...featured, ...MOCK_PRODUCTS].slice(0, 30));
         setNewArrivals(arrivals.length >= 25 ? arrivals : [...arrivals, ...MOCK_PRODUCTS].slice(0, 30));
+        setCategories(cats);
       } catch (error) {
         console.error('Error fetching home data:', error);
         setFeaturedProducts(MOCK_PRODUCTS);
@@ -98,54 +101,104 @@ export default function Home() {
     }
   };
 
+  const getCategoryIcon = (name: string) => {
+    const icons: Record<string, any> = {
+      'Electronics': <Laptop className="text-blue-500" />,
+      'Clothing': <Disc className="text-rose-500" />, // Using Disc for Apparel
+      'Shoes': <ShoppingBag className="text-amber-500" />,
+      'Sports': <Dumbbell className="text-emerald-500" />,
+      'Home & Kitchen': <HomeIcon className="text-indigo-500" />,
+      'Beauty & Personal Care': <HeartPulse className="text-pink-500" />,
+      'Toys & Kids': <Baby className="text-purple-500" />,
+      'Jewelry & Accessories': <Gem className="text-yellow-600" />,
+      'Bags & Luggage': <Briefcase className="text-brown-500" />,
+      'Automotive': <Car className="text-gray-500" />,
+      'Health & Medical': <Stethoscope className="text-red-500" />,
+      'Office Supplies': <Eraser className="text-blue-600" />,
+      'Furniture': <Sofa className="text-orange-700" />,
+      'Groceries': <Apple className="text-green-600" />,
+      'Books': <Book className="text-indigo-400" />
+    };
+    return icons[name] || <ShoppingCart className="text-gray-400" />;
+  };
+
   return (
     <div className="flex flex-col space-y-32 pb-32 bg-white">
-      {/* Hero Section */}
-      <section className="relative h-[90vh] flex items-center overflow-hidden">
-        {HERO_IMAGES.map((img, idx) => (
-          <div 
-            key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentHero ? 'opacity-100' : 'opacity-0'}`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
-            <img 
-              src={img} 
-              alt={`Slide ${idx}`} 
-              className="w-full h-full object-cover scale-105 animate-slow-zoom"
-            />
-          </div>
-        ))}
-
-        <div className="container mx-auto px-6 z-20 relative">
-          <div className="max-w-3xl space-y-8">
-            <div className="inline-flex items-center space-x-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/30 px-4 py-2 rounded-full overflow-hidden">
-              <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
-              <span className="text-orange-500 text-xs font-black uppercase tracking-widest">Premium Selection 2026</span>
+      {/* Hero Container with Sidebar */}
+      <section className="container mx-auto px-6 pt-8">
+        <div className="flex flex-col lg:flex-row gap-8 min-h-[600px]">
+          {/* Category Sidebar - Desktop */}
+          <aside className="hidden lg:flex flex-col w-[260px] bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden shrink-0">
+            <div className="bg-gray-50/50 p-6 border-b border-gray-100 italic">
+               <h3 className="font-black text-gray-900 tracking-tight uppercase text-sm">Collections</h3>
             </div>
-            <h1 className="text-6xl md:text-8xl font-black leading-[0.9] text-white">
-              ELEVATE <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600 font-black">LIFESTYLE</span>
-            </h1>
-            <p className="text-xl text-gray-200 max-w-lg font-medium leading-relaxed">
-              Curated precision-engineered essentials for the modern pioneer. Discover excellence in every detail with our expanded collection.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <Link 
-                href="/products" 
-                className="group relative w-full sm:w-auto bg-orange-500 text-white px-12 py-6 rounded-2xl font-black text-lg overflow-hidden transition-all hover:bg-orange-600 shadow-2xl shadow-orange-500/40"
+            <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
+              {categories.map((cat) => (
+                <Link 
+                  key={cat.id} 
+                  href={`/products?categoryId=${cat.id}`}
+                  className="flex items-center gap-3 px-6 py-3 text-sm font-bold text-gray-600 hover:text-orange-500 hover:bg-orange-50/50 transition-all group"
+                >
+                  <span className="shrink-0 transition-transform group-hover:scale-110">
+                    {getCategoryIcon(cat.name)}
+                  </span>
+                  <span className="truncate">{cat.name}</span>
+                  <ChevronRight size={14} className="ml-auto opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </Link>
+              ))}
+              {categories.length === 0 && (
+                <div className="p-6 text-center text-gray-400 text-xs italic">Loading collections...</div>
+              )}
+            </div>
+            <Link href="/products" className="p-6 bg-gray-50/50 text-xs font-black text-orange-500 uppercase tracking-widest border-t border-gray-100 hover:bg-orange-50 transition-colors text-center">
+               View All Collections
+            </Link>
+          </aside>
+
+          {/* Sliding Hero Banner */}
+          <div className="flex-1 relative rounded-[3rem] overflow-hidden group shadow-2xl shadow-orange-500/10 h-[500px] lg:h-auto">
+            {HERO_IMAGES.map((img, idx) => (
+              <div 
+                key={idx}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentHero ? 'opacity-100' : 'opacity-0'}`}
               >
-                <div className="relative z-10 flex items-center justify-center">
-                  EXPLORE SHOP <ArrowRight size={22} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent z-10"></div>
+                <img 
+                  src={img} 
+                  alt={`Slide ${idx}`} 
+                  className="w-full h-full object-cover scale-105 animate-slow-zoom"
+                />
+              </div>
+            ))}
+
+            <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 md:px-20">
+              <div className="max-w-2xl space-y-8">
+                <div className="inline-flex items-center space-x-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/30 px-4 py-2 rounded-full">
+                  <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
+                  <span className="text-orange-500 text-xs font-black uppercase tracking-widest">Premium Selection 2026</span>
                 </div>
-              </Link>
+                <h1 className="text-5xl md:text-7xl font-black leading-[0.9] text-white tracking-tighter">
+                  ELEVATE <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">LIFESTYLE</span>
+                </h1>
+                <p className="text-lg text-gray-200 max-w-lg font-medium leading-relaxed opacity-90">
+                  Curated precision-engineered essentials for the modern pioneer. Discover excellence in every detail.
+                </p>
+                <Link 
+                  href="/products" 
+                  className="group relative inline-flex items-center bg-orange-500 text-white px-10 py-5 rounded-2xl font-black text-lg overflow-hidden transition-all hover:bg-orange-600 shadow-2xl shadow-orange-500/40"
+                >
+                  EXPLORE SHOP <ArrowRight size={20} className="ml-2 group-hover:translate-x-2 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            <div className="absolute bottom-10 left-12 z-20 flex space-x-3">
+              {HERO_IMAGES.map((_, i) => (
+                <button key={i} onClick={() => setCurrentHero(i)} className={`h-1.5 transition-all duration-500 rounded-full ${i === currentHero ? 'w-12 bg-orange-500' : 'w-4 bg-white/30'}`} />
+              ))}
             </div>
           </div>
-        </div>
-
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex space-x-3">
-          {HERO_IMAGES.map((_, i) => (
-            <button key={i} onClick={() => setCurrentHero(i)} className={`h-1.5 transition-all duration-500 rounded-full ${i === currentHero ? 'w-12 bg-orange-500' : 'w-4 bg-white/30'}`} />
-          ))}
         </div>
       </section>
 
@@ -168,6 +221,40 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Category Discovery Grid */}
+      <section className="container mx-auto px-6">
+        <div className="flex items-end justify-between mb-12">
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black tracking-tight text-gray-900 uppercase">Browse Categories</h2>
+            <p className="text-gray-400 font-bold">Explore our precision-curated collections</p>
+          </div>
+          <Link href="/products" className="text-orange-500 font-black text-sm uppercase tracking-widest hover:underline flex items-center gap-2">
+            View All <ArrowRight size={16} />
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          {[
+            { name: 'Electronics', color: 'bg-blue-50', icon: '💻', count: '1.2k+' },
+            { name: 'Fashion', color: 'bg-rose-50', icon: '👗', count: '850+' },
+            { name: 'Home', color: 'bg-amber-50', icon: '🏠', count: '420+' },
+            { name: 'Beauty', color: 'bg-pink-50', icon: '💄', count: '600+' },
+            { name: 'Sports', color: 'bg-emerald-50', icon: '⚽', count: '300+' },
+            { name: 'Books', color: 'bg-indigo-50', icon: '📚', count: '150+' },
+          ].map((cat) => (
+            <Link 
+              key={cat.name} 
+              href={`/products?q=${cat.name.toLowerCase()}`}
+              className={`group ${cat.color} p-8 rounded-[2.5rem] border border-transparent hover:border-orange-200 transition-all duration-500 text-center flex flex-col items-center hover:shadow-xl hover:-translate-y-2`}
+            >
+              <div className="text-5xl mb-4 group-hover:scale-110 transition-transform duration-500">{cat.icon}</div>
+              <h3 className="font-black text-gray-900 mb-1">{cat.name}</h3>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{cat.count} Items</span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* Features */}
       <section className="container mx-auto px-6">
@@ -267,6 +354,27 @@ export default function Home() {
                <ProductCard product={product} />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Recommended for You Grid */}
+      <section className="container mx-auto px-6">
+        <div className="text-center mb-16 space-y-4">
+           <span className="text-orange-500 font-black text-xs uppercase tracking-[0.4em]">Personalized</span>
+           <h2 className="text-5xl font-black text-gray-900 tracking-tight">Recommended for You</h2>
+           <div className="h-1.5 w-24 bg-orange-500 mx-auto"></div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+          {featuredProducts.slice(0, 10).map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+        
+        <div className="mt-20 text-center">
+          <Link href="/products" className="inline-flex items-center gap-2 bg-gray-900 text-white px-10 py-5 rounded-2xl font-black hover:bg-black transition-all shadow-xl shadow-gray-200">
+            LOAD MORE PRODUCTS <ArrowRight size={20} />
+          </Link>
         </div>
       </section>
 

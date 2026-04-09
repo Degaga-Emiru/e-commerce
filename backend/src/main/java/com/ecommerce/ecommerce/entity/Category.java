@@ -33,6 +33,14 @@ public class Category {
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Category> subCategories = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    @JsonIgnore
+    private User createdBy;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CategoryAttribute> attributes = new ArrayList<>();
+
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     //@JsonIgnore
     private List<Product> products = new ArrayList<>();
@@ -83,4 +91,10 @@ public class Category {
 
     public List<Category> getSubCategories() { return subCategories; }
     public void setSubCategories(List<Category> subCategories) { this.subCategories = subCategories; }
+
+    public User getCreatedBy() { return createdBy; }
+    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+
+    public List<CategoryAttribute> getAttributes() { return attributes; }
+    public void setAttributes(List<CategoryAttribute> attributes) { this.attributes = attributes; }
 }

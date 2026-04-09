@@ -2,6 +2,8 @@
 package com.ecommerce.ecommerce.mapper;
 import com.ecommerce.ecommerce.dto.ProductDto;
 import com.ecommerce.ecommerce.dto.ProductVariantDto;
+import com.ecommerce.ecommerce.dto.ProductAttributeValueDto;
+import com.ecommerce.ecommerce.entity.ProductAttributeValue;
 import com.ecommerce.ecommerce.entity.Product;
 import com.ecommerce.ecommerce.entity.ProductVariant;
 import org.mapstruct.Mapper;
@@ -20,6 +22,14 @@ public interface ProductMapper {
 
     ProductVariantDto toVariantDto(ProductVariant variant);
     ProductVariant toVariantEntity(ProductVariantDto variantDto);
+
+    @Mapping(target = "attributeId", source = "attribute.id")
+    @Mapping(target = "attributeName", source = "attribute.name")
+    ProductAttributeValueDto toAttributeValueDto(ProductAttributeValue value);
+
+    @Mapping(target = "attribute", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    ProductAttributeValue toAttributeValueEntity(ProductAttributeValueDto dto);
 
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "seller", ignore = true)

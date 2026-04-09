@@ -24,6 +24,7 @@ public class ProductDto {
     private Double averageRating;
     private Integer reviewCount;
     private List<ProductVariantDto> variants = new ArrayList<>();
+    private List<ProductAttributeValueDto> attributeValues = new ArrayList<>();
 
     public ProductDto() {}
 
@@ -84,4 +85,7 @@ public class ProductDto {
 
     public LocalDateTime getFlashSaleExpiry() { return flashSaleExpiry; }
     public void setFlashSaleExpiry(LocalDateTime flashSaleExpiry) { this.flashSaleExpiry = flashSaleExpiry; }
+
+    public List<ProductAttributeValueDto> getAttributeValues() { return attributeValues; }
+    public void setAttributeValues(List<ProductAttributeValueDto> attributeValues) { this.attributeValues = attributeValues; }
 }

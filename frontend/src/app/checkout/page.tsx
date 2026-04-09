@@ -143,13 +143,22 @@ const CheckoutPage = () => {
       <div className="flex flex-col lg:flex-row gap-12">
         {/* Left Side: Form */}
         <div className="lg:w-2/3 space-y-12">
-          {/* Breadcrumbs */}
-          <div className="flex items-center space-x-4 text-sm font-medium">
-            <span className="text-orange-500 font-bold">Checkout</span>
+          {/* Breadcrumbs / Steps */}
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push('/cart')}>
+               <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xs">1</div>
+               <span className="text-sm font-black text-orange-500 uppercase tracking-widest">Cart</span>
+            </div>
             <ChevronRight size={16} className="text-gray-300" />
-            <span className="text-gray-400">Shipping</span>
+            <div className="flex items-center gap-2">
+               <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-lg shadow-orange-500/20">2</div>
+               <span className="text-sm font-black text-gray-900 uppercase tracking-widest">Review & Pay</span>
+            </div>
             <ChevronRight size={16} className="text-gray-300" />
-            <span className="text-gray-400">Payment</span>
+            <div className="flex items-center gap-2 opacity-30">
+               <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-black text-xs">3</div>
+               <span className="text-sm font-black text-gray-400 uppercase tracking-widest">Success</span>
+            </div>
           </div>
 
           <section className="space-y-6">
@@ -242,19 +251,26 @@ const CheckoutPage = () => {
           <div className="sticky top-28 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-orange-500/10">
             <h2 className="text-xl font-black mb-8 text-gray-900 tracking-tight">Order Summary</h2>
             
-            <div className="space-y-4 mb-8">
+            <div className="space-y-6 mb-10">
               {cart.map((item) => (
-                <div key={`${item.productId}-${item.variantId || 'base'}`} className="flex justify-between text-sm py-2">
-                  <div className="flex flex-col">
-                    <span className="text-gray-900 font-bold">{item.name}</span>
-                    {(item.size || item.color) && (
-                      <span className="text-gray-400 text-[10px] uppercase font-black tracking-widest">
-                        {item.size} {item.size && item.color && '/'} {item.color}
-                      </span>
-                    )}
-                    <span className="text-gray-400 font-bold">Qty: {item.quantity}</span>
+                <div key={`${item.productId}-${item.variantId || 'base'}`} className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gray-50 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
+                    <img src={item.image || 'https://via.placeholder.com/100'} alt="" className="w-full h-full object-cover" />
                   </div>
-                  <span className="font-bold text-gray-900">ETB {(item.price * item.quantity).toLocaleString()}</span>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-gray-900 truncate">{item.name}</h4>
+                    <div className="flex items-center justify-between mt-1">
+                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                         {item.quantity} × ETB {item.price.toLocaleString()}
+                       </span>
+                       <span className="text-sm font-black text-gray-900">ETB {(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                    {(item.size || item.color) && (
+                      <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mt-0.5">
+                        {item.size} {item.size && item.color && '/'} {item.color}
+                      </p>
+                    )}
+                  </div>
                 </div>
               ))}
               

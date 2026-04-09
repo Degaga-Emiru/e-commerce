@@ -21,6 +21,7 @@ const ProductDetails = () => {
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const variantSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,8 +47,22 @@ const ProductDetails = () => {
       }
     };
 
+    const fetchRelatedProducts = async () => {
+      try {
+        if (!product?.categoryId && !id) return;
+        const catId = product?.categoryId;
+        const res = await api.get(`/products/filter?categoryId=${catId}`);
+        // Filter out current product
+        const filtered = (res.data.products || []).filter((p: any) => String(p.id) !== String(id)).slice(0, 4);
+        setRelatedProducts(filtered);
+      } catch (e) {
+        console.warn('Failed to fetch related products');
+      }
+    };
+
     if (id) fetchProduct();
-  }, [id, isAuthenticated]);
+    if (product) fetchRelatedProducts();
+  }, [id, isAuthenticated, product?.id]);
 
   const refreshProductData = async () => {
     try {
@@ -107,6 +122,29 @@ const ProductDetails = () => {
       image: selectedVariant?.imageUrl || product.imageUrl || product.image
     });
     toast.success(`${quantity} item(s) added to cart!`);
+  };
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+    
+    if (product.variants?.length > 0 && !selectedVariant) {
+      toast.error('Please select size and color options first');
+      variantSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    await addToCart({
+      productId: product.id,
+      variantId: selectedVariant?.id,
+      name: product.name || product.title,
+      size: selectedVariant?.size,
+      color: selectedVariant?.color,
+      price: selectedVariant?.price || product.price,
+      quantity: quantity,
+      image: selectedVariant?.imageUrl || product.imageUrl || product.image
+    });
+    
+    router.push('/checkout');
   };
 
   if (loading) return (
@@ -246,10 +284,17 @@ const ProductDetails = () => {
               </div>
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 w-full bg-orange-500 text-white py-5 rounded-[1.5rem] font-black text-xl flex items-center justify-center space-x-4 hover:bg-orange-600 transition-all shadow-2xl shadow-orange-500/30 active:scale-[0.98]"
+                className="flex-1 w-full bg-white border-2 border-orange-500 text-orange-500 py-5 rounded-[1.5rem] font-black text-xl flex items-center justify-center space-x-4 hover:bg-orange-50 transition-all active:scale-[0.98]"
               >
                 <ShoppingCart size={24} />
                 <span>Add to Cart</span>
+              </button>
+              <button 
+                onClick={handleBuyNow}
+                className="flex-1 w-full bg-orange-500 text-white py-5 rounded-[1.5rem] font-black text-xl flex items-center justify-center space-x-4 hover:bg-orange-600 transition-all shadow-2xl shadow-orange-500/30 active:scale-[0.98]"
+              >
+                <Zap size={24} />
+                <span>Buy It Now</span>
               </button>
             </div>
           </div>
@@ -275,7 +320,28 @@ const ProductDetails = () => {
         </div>
       </div>
 
-      <div className="mt-24 grid grid-cols-1 lg:grid-cols-2 gap-20">
+      <div className="mt-32">
+        <div className="flex items-end justify-between mb-12">
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black tracking-tight text-gray-900 uppercase">Related Pieces</h2>
+            <p className="text-gray-400 font-bold">You might also be interested in these selections</p>
+          </div>
+        </div>
+        
+        {relatedProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {relatedProducts.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-20 text-center bg-gray-50 rounded-[3rem] border border-gray-100 italic text-gray-400">
+            No related pieces found for this collection.
+          </div>
+        )}
+      </div>
+
+      <div className="mt-32 grid grid-cols-1 lg:grid-cols-2 gap-20">
         {/* Specifications */}
         <div className="space-y-12">
             <h2 className="text-4xl font-black text-gray-900 tracking-tight">Technical Specs</h2>
@@ -283,8 +349,12 @@ const ProductDetails = () => {
               {[
                 { name: 'Stock Status', value: product.stockQuantity > 0 ? 'In Stock' : 'Out of Stock' },
                 { name: 'SKU', value: `EST-${product.id}00${product.name?.length || 0}` },
-                { name: 'Brand', value: product.seller?.shopName || 'E-Store Premium' },
+                { name: 'Brand', value: product.brand || product.seller?.shopName || 'E-Store Premium' },
                 { name: 'Category', value: product.category?.name || 'General' },
+                ...(product.attributeValues || []).map((av: any) => ({
+                  name: av.attributeName,
+                  value: av.value
+                }))
               ].map((spec) => (
                 <div key={spec.name} className="flex justify-between items-center py-5 border-b border-gray-100">
                   <span className="text-gray-400 font-bold uppercase text-xs tracking-widest">{spec.name}</span>

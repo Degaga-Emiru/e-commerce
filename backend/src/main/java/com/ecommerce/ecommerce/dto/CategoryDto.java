@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.dto;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class CategoryDto {
     private Long id;
@@ -10,7 +11,8 @@ public class CategoryDto {
     private LocalDateTime updatedAt;
     private Integer productCount;
     private Long parentId;
-    private java.util.List<CategoryDto> subCategories;
+    private List<CategoryDto> subCategories;
+    private List<CategoryAttributeDto> attributes;
 
     public CategoryDto() {}
 
@@ -39,6 +41,9 @@ public class CategoryDto {
     public Long getParentId() { return parentId; }
     public void setParentId(Long parentId) { this.parentId = parentId; }
 
-    public java.util.List<CategoryDto> getSubCategories() { return subCategories; }
-    public void setSubCategories(java.util.List<CategoryDto> subCategories) { this.subCategories = subCategories; }
+    public List<CategoryDto> getSubCategories() { return subCategories; }
+    public void setSubCategories(List<CategoryDto> subCategories) { this.subCategories = subCategories; }
+
+    public List<CategoryAttributeDto> getAttributes() { return attributes; }
+    public void setAttributes(List<CategoryAttributeDto> attributes) { this.attributes = attributes; }
 }

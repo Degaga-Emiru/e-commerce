@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, User, Search, Menu, BarChart2, Store, Ticket, Sparkles, Heart, Zap, Loader2 } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, BarChart2, Store, Ticket, Sparkles, Heart, Zap, Loader2, X, ChevronRight, LogOut, Bell } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useWishlist } from '@/context/WishlistContext';
@@ -11,16 +11,18 @@ import NotificationBell from './NotificationBell';
 import { getImageUrl } from '@/util/imageUtils';
 
 import { useRouter } from 'next/navigation';
-import { searchApi } from '@/services/api';
+import { searchApi, categoryApi } from '@/services/api';
 
 const Navbar = () => {
   const { cartCount } = useCart();
   const { wishlistCount } = useWishlist();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [showSuggestions, setShowSuggestions] = React.useState(false);
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [categories, setCategories] = React.useState<any[]>([]);
   const [history, setHistory] = React.useState<any[]>([]);
   const [liveSuggestions, setLiveSuggestions] = React.useState<{ products: any[], categories: any[] }>({ products: [], categories: [] });
   const [fetchingSuggestions, setFetchingSuggestions] = React.useState(false);
@@ -48,6 +50,21 @@ const Navbar = () => {
   };
 
   React.useEffect(() => {
+    fetchHistory();
+    fetchCategories();
+  }, [isAuthenticated]);
+
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get('/categories');
+      const cats = res.data.categories || res.data.data || (Array.isArray(res.data) ? res.data : []);
+      setCategories(cats);
+    } catch (e) {
+      console.warn('Failed to fetch navbar categories');
+    }
+  };
+
+  React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
@@ -56,6 +73,11 @@ const Navbar = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close menu on route change
+  React.useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   React.useEffect(() => {
     // Dynamic Real-Time Search Redirect
@@ -318,11 +340,121 @@ const Navbar = () => {
             </Link>
           )}
 
-          <button className="md:hidden text-gray-700">
-            <Menu size={24} />
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden text-gray-700 hover:text-orange-500 transition-colors p-2 rounded-xl"
+          >
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
+
+      {/* Mobile Menu Drawer */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 top-[73px] z-[100] md:hidden">
+          {/* Blur Overlay */}
+          <div 
+            className="absolute inset-0 bg-white/60 backdrop-blur-xl animate-in fade-in duration-300"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="absolute top-0 right-0 bottom-0 w-[85%] max-w-sm bg-white border-l border-gray-100 shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+            {/* User Info / Auth */}
+            <div className="p-8 border-b border-gray-50 bg-gray-50/50">
+              {isAuthenticated ? (
+                 <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl overflow-hidden ring-4 ring-white shadow-xl">
+                      {user?.profilePictureUrl ? (
+                        <img src={getImageUrl(user.profilePictureUrl)} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-orange-500 flex items-center justify-center text-white font-black text-lg">
+                           {user?.firstName?.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-black text-gray-900 text-lg leading-tight">{user?.firstName} {user?.lastName}</h4>
+                      <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-1 italic">{user?.role} Pulse Member</p>
+                    </div>
+                 </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                   <h4 className="font-black text-gray-900 text-lg">Experience Excellence</h4>
+                   <div className="grid grid-cols-2 gap-3">
+                      <Link href="/login" className="bg-orange-500 text-white py-3 rounded-xl font-black text-xs text-center shadow-lg shadow-orange-500/20 uppercase tracking-widest">Login</Link>
+                      <Link href="/register" className="bg-gray-900 text-white py-3 rounded-xl font-black text-xs text-center uppercase tracking-widest">Sign Up</Link>
+                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Search */}
+            <div className="p-6 border-b border-gray-50">
+               <form onSubmit={handleSearch} className="relative">
+                 <input 
+                   type="text" 
+                   placeholder="Searching catalog..."
+                   value={searchQuery}
+                   onChange={(e) => setSearchQuery(e.target.value)}
+                   className="w-full bg-gray-50 border-none rounded-2xl py-4 px-12 focus:ring-2 focus:ring-orange-500/20 focus:bg-white transition-all outline-none font-bold"
+                 />
+                 <Search size={20} className="absolute left-4 top-4 text-gray-400" />
+               </form>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="p-6 grid grid-cols-3 gap-4 border-b border-gray-50">
+               {[
+                 { icon: <ShoppingCart />, label: 'Cart', count: cartCount, href: '/cart' },
+                 { icon: <Heart />, label: 'Wishlist', count: wishlistCount, href: '/wishlist' },
+                 { icon: <Bell />, label: 'Alerts', count: 0, href: '/notifications' }
+               ].map((action, idx) => (
+                 <Link key={idx} href={action.href} className="flex flex-col items-center gap-2 group">
+                    <div className="w-14 h-14 bg-gray-50 rounded-[1.25rem] flex items-center justify-center text-gray-600 group-hover:bg-orange-500 group-hover:text-white transition-all relative">
+                      {action.icon}
+                      {action.count > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-black border-2 border-white">
+                          {action.count}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{action.label}</span>
+                 </Link>
+               ))}
+            </div>
+
+            {/* Categories Menu */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+               <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Collections</h5>
+               <div className="space-y-1">
+                 {categories.map((cat) => (
+                    <Link 
+                      key={cat.id} 
+                      href={`/products?categoryId=${cat.id}`}
+                      className="flex items-center justify-between p-4 rounded-2xl hover:bg-orange-50 text-gray-600 hover:text-orange-500 transition-all font-bold"
+                    >
+                      <span className="text-sm">{cat.name}</span>
+                      <ChevronRight size={16} className="text-gray-300" />
+                    </Link>
+                 ))}
+               </div>
+            </div>
+
+            {/* Bottom Actions */}
+            {isAuthenticated && (
+              <div className="p-8 border-t border-gray-50">
+                <button 
+                  onClick={() => { logout(); router.push('/'); setIsMenuOpen(false); }}
+                  className="w-full flex items-center justify-center gap-2 text-rose-500 font-black uppercase text-xs tracking-widest hover:bg-rose-50 py-4 rounded-2xl transition-all"
+                >
+                  <LogOut size={16} /> Secure Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
