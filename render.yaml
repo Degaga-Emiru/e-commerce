@@ -12,15 +12,11 @@ services:
   # -------------------------
   - type: web
     name: ecommerce-api
-    env: java
+    env: docker
     rootDir: backend
     plan: free
-    buildCommand: ./mvnw clean package -DskipTests
-    startCommand: java -jar target/ecommerce-backend-1.0.0.jar
     autoDeploy: true
     envVars:
-      - key: JAVA_VERSION
-        value: "17"
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       - key: SPRING_DATASOURCE_URL
