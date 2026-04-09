@@ -59,11 +59,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <Link href={`/product/${product.id}`}>
         <div className="relative aspect-square bg-gray-50 overflow-hidden">
           {product.imageUrl ? (
-            <img
-              src={getImageUrl(product.imageUrl)}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
+              <img
+                src={getImageUrl(product.imageUrl)}
+                alt={product.name}
+                loading="lazy"
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+              />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300 italic text-sm">
               No Preview

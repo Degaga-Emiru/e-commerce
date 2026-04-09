@@ -8,6 +8,8 @@ interface WishlistContextType {
   wishlistCount: number;
   refreshWishlist: () => Promise<void>;
   items: any[];
+  toggleWishlist: (productId: number) => Promise<void>;
+  isInWishlist: (productId: number) => boolean;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
@@ -21,7 +23,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (isAuthenticated) {
       try {
         const response = await wishlistApi.getWishlist();
-        const wishlistItems = response.data.data.items || [];
+        // Assuming backend returns { success: true, data: { items: [...] } }
+        const wishlistItems = response.data.data?.items || response.data.data || [];
         setWishlistCount(wishlistItems.length);
         setItems(wishlistItems);
       } catch (error) {
@@ -33,12 +36,31 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const isInWishlist = (productId: number) => {
+    return items.some(item => (item.id === productId || item.productId === productId));
+  };
+
+  const toggleWishlist = async (productId: number) => {
+    if (!isAuthenticated) return;
+
+    try {
+      if (isInWishlist(productId)) {
+        await wishlistApi.removeFromWishlist(productId);
+      } else {
+        await wishlistApi.addToWishlist(productId);
+      }
+      await refreshWishlist();
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    }
+  };
+
   useEffect(() => {
     refreshWishlist();
   }, [isAuthenticated]);
 
   return (
-    <WishlistContext.Provider value={{ wishlistCount, refreshWishlist, items }}>
+    <WishlistContext.Provider value={{ wishlistCount, refreshWishlist, items, toggleWishlist, isInWishlist }}>
       {children}
     </WishlistContext.Provider>
   );

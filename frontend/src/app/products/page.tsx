@@ -106,9 +106,11 @@ export default function ProductsPage() {
 
         <div className="flex-1 space-y-12">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-[4/5] bg-gray-50 animate-pulse rounded-[2.5rem]" />
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="aspect-[4/5] bg-gray-50 border border-gray-100 rounded-2xl animate-pulse relative overflow-hidden flex items-center justify-center">
+                   <div className="w-12 h-12 border-4 border-gray-200 border-t-orange-500 rounded-full animate-spin" />
+                </div>
               ))}
             </div>
           ) : products.length === 0 ? (
@@ -123,7 +125,7 @@ export default function ProductsPage() {
                </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-10">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
@@ -132,5 +134,6 @@ export default function ProductsPage() {
         </div>
       </div>
     </div>
+
   );
 }
