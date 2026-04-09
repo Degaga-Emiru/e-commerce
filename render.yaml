@@ -1,0 +1,63 @@
+version: "1"
+
+services:
+  # -------------------------
+  # PostgreSQL Database
+  # -------------------------
+  - type: psql
+    name: ecommerce-db
+    databaseName: ecommerce_prod
+    user: root
+    plan: free # Change to starter/standard for production scaling
+
+  # -------------------------
+  # Backend Spring Boot API
+  # -------------------------
+  - type: web
+    name: ecommerce-api
+    env: java
+    rootDir: backend
+    plan: free # Change dynamically for production scaling
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/ecommerce-backend-1.0.0.jar
+    autoDeploy: true
+    envVars:
+      - key: JAVA_VERSION
+        value: "17" # Enforcing Java 17 mapping
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: ecommerce-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: ecommerce-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: ecommerce-db
+          property: password
+      # Add authentic secrets directly inside Render Dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+
+  # -------------------------
+  # Frontend Next.js Web App
+  # -------------------------
+  - type: web
+    name: ecommerce-frontend
+    env: node
+    rootDir: frontend
+    plan: free # Change dynamically for production scaling
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set this value inside Render Dashboard to the generated API URL (e.g. https://ecommerce-api-xyz.onrender.com/api)
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
