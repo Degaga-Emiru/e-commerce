@@ -3,7 +3,8 @@
 import React from 'react';
 import { 
   User as UserIcon, Mail, Phone, MapPin, 
-  ChevronRight, Calendar, Shield, CreditCard 
+  ChevronRight, Calendar, Shield, CreditCard,
+  Package, Heart, MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -104,8 +105,5 @@ const OverviewSection: React.FC<OverviewSectionProps> = ({ user, onEdit }) => {
     </div>
   );
 };
-
-// Internal imports for the icons to avoid missing imports in this snippet
-import { Package, Heart, MessageSquare } from 'lucide-react';
 
 export default OverviewSection;

@@ -144,6 +144,14 @@ public class ReviewService {
         return reviewMapper.toDtoList(reviewRepository.findByUserId(userId));
     }
 
+    public List<ReviewDto> getAllReviews() {
+        return reviewMapper.toDtoList(reviewRepository.findAll());
+    }
+
+    public List<Review> getRawReviews() {
+        return reviewRepository.findAll();
+    }
+
     public Double getAverageRatingForProduct(Long productId) {
         Double averageRating = reviewRepository.findAverageRatingByProductId(productId);
         return averageRating != null ? averageRating : 0.0;

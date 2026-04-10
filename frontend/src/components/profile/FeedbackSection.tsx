@@ -7,38 +7,45 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 interface Review {
   id: number;
-  product: {
-    id: number;
-    name: string;
-    imageUrl: string;
-  };
+  productId: number;
+  productName: string;
   rating: number;
   comment: string;
   createdAt: string;
-  isApproved: boolean;
+  verifiedPurchase: boolean;
+  images: string[];
+  user?: {
+    firstName: string;
+    lastName: string;
+  };
 }
 
 const FeedbackSection = () => {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [user]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/reviews/me');
+      const endpoint = isAdmin ? '/admin/reviews' : '/reviews/me';
+      const res = await api.get(endpoint);
       if (res.data.success) {
-        setReviews(res.data.reviews);
+        setReviews(res.data.reviews || res.data.data || []);
       }
     } catch (err) {
       console.error('Failed to fetch reviews:', err);
-      toast.error('Could not load feedback data');
+      toast.error('Could not load feedback history');
     } finally {
       setLoading(false);
     }
@@ -58,17 +65,39 @@ const FeedbackSection = () => {
     );
   };
 
+  if (user?.role === 'SELLER') {
+    return (
+      <div className="bg-indigo-50 p-10 rounded-[2.5rem] border border-indigo-100 text-center">
+        <MessageCircle size={48} className="text-indigo-400 mx-auto mb-4" />
+        <h3 className="text-xl font-black text-indigo-900 mb-2">Customer Feedback Dashboard</h3>
+        <p className="text-indigo-700/70 font-medium max-w-sm mx-auto mb-8">
+          Sellers view and respond to customer feedback directly within the Seller Portal's product management section.
+        </p>
+        <Link 
+          href="/seller/dashboard"
+          className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20"
+        >
+          Go to Seller Portal
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-start gap-4">
+      <div className={isAdmin ? "bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 flex items-start gap-4" : "bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-start gap-4"}>
         <div className="p-3 bg-white rounded-2xl shadow-sm">
-          <MessageCircle className="text-emerald-500" size={24} />
+          <MessageCircle className={isAdmin ? "text-indigo-500" : "text-emerald-500"} size={24} />
         </div>
         <div>
-          <h3 className="font-black text-emerald-900 text-lg">Your Influence</h3>
-          <p className="text-sm text-emerald-700 font-medium mt-1 leading-relaxed">
-            Your reviews help other shoppers make better decisions and help us improve our catalog. 
-            All reviews are moderated for quality.
+          <h3 className={isAdmin ? "font-black text-indigo-900 text-lg" : "font-black text-emerald-900 text-lg"}>
+            {isAdmin ? 'Platform Customer Feedback' : 'Reviews & Feedback'}
+          </h3>
+          <p className={isAdmin ? "text-sm text-indigo-700 font-medium mt-1 leading-relaxed" : "text-sm text-emerald-700 font-medium mt-1 leading-relaxed"}>
+            {isAdmin 
+              ? 'Monitoring all platform reviews to ensure quality and customer satisfaction across all products.'
+              : "These are the reviews you have shared on products you've purchased. Your feedback ensures a quality marketplace."
+            }
           </p>
         </div>
       </div>
@@ -77,16 +106,16 @@ const FeedbackSection = () => {
         {loading ? (
           <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-orange-500" /></div>
         ) : reviews.length > 0 ? (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 text-left">
             {reviews.map((review) => (
               <div key={review.id} className="p-8 hover:bg-gray-50/50 transition-colors group relative">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
                   <div className="flex items-start gap-6">
-                    <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 group-hover:scale-110 transition-transform">
-                      {review.product.imageUrl ? (
+                    <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 group-hover:scale-110 transition-transform flex items-center justify-center">
+                      {review.images && review.images.length > 0 ? (
                         <img 
-                          src={review.product.imageUrl} 
-                          alt={review.product.name} 
+                          src={review.images[0]} 
+                          alt={review.productName} 
                           className="w-full h-full object-cover" 
                         />
                       ) : (
@@ -97,23 +126,40 @@ const FeedbackSection = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{new Date(review.createdAt).toLocaleDateString()}</p>
-                      <h4 className="font-black text-gray-900 text-lg group-hover:text-orange-500 transition-colors line-clamp-1">{review.product.name}</h4>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {isAdmin && review.user && (
+                          <span className="text-[10px] font-black bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase">
+                            {review.user.firstName} {review.user.lastName}
+                          </span>
+                        )}
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </p>
+                        <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
+                        {review.verifiedPurchase && (
+                          <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Verified Purchase</p>
+                        )}
+                      </div>
+                      <h4 className="font-black text-gray-900 text-lg group-hover:text-orange-500 transition-colors line-clamp-1">
+                        {review.productName}
+                      </h4>
                       {renderStars(review.rating)}
-                      <p className="text-sm text-gray-600 font-medium leading-relaxed italic mt-2">"{review.comment}"</p>
+                      <div className="mt-4 p-4 bg-gray-50/50 rounded-2xl border border-gray-100 group-hover:border-orange-100 transition-colors">
+                        <p className="text-sm text-gray-600 font-medium leading-relaxed italic">
+                          "{review.comment}"
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 mt-auto md:mt-0">
-                    <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      review.isApproved ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                    }`}>
-                      {review.isApproved ? 'Approved' : 'Pending Moderation'}
-                    </div>
-                    
-                    <button className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-white hover:text-orange-500 hover:shadow-md transition-all">
-                      <Edit3 size={18} />
-                    </button>
+                    <Link 
+                      href={`/product/${review.productId}`}
+                      className="p-3 bg-gray-50 text-gray-400 rounded-2xl hover:bg-white hover:text-orange-500 hover:shadow-md transition-all flex items-center gap-2"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-widest hidden lg:inline">View Product</span>
+                      <ChevronRight size={18} />
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -124,9 +170,9 @@ const FeedbackSection = () => {
             <div className="w-20 h-20 bg-gray-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6">
               <MessageSquare size={40} className="text-gray-200" />
             </div>
-            <h4 className="text-xl font-black text-gray-900 mb-2">No Reviews Yet</h4>
+            <h4 className="text-xl font-black text-gray-900 mb-2">No Reviews Found</h4>
             <p className="text-gray-400 font-medium max-w-xs mx-auto">
-              Share your thoughts on the items you've purchased and help the community!
+              Once you start sharing your thoughts on purchased products, they will appear here.
             </p>
           </div>
         )}

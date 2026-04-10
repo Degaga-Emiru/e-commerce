@@ -11,6 +11,14 @@ export interface User {
   phoneNumber?: string;
   isNewUser?: boolean;
   profilePictureUrl?: string;
+  address?: {
+    addressId?: number;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
 }
 
 interface AuthContextType {

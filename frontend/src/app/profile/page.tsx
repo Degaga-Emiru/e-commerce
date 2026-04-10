@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import api from '@/services/api';
-import { Loader2, LogOut, Trash2, Store, Shield } from 'lucide-react';
+import { Loader2, LogOut, Trash2, Store, Shield, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
 // New Components
@@ -141,13 +141,24 @@ export default function ProfilePage() {
 
         {activeTab === 'orders' && (
           <div className="text-center py-20 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
-             <h3 className="text-2xl font-black text-gray-900 mb-4">Looking for your orders?</h3>
-             <p className="text-gray-500 mb-8 max-w-md mx-auto">We have a dedicated page for tracking and managing your purchases.</p>
+             <div className="w-20 h-20 bg-gray-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-6">
+                <ShoppingBag size={40} className="text-gray-200" />
+             </div>
+             <h3 className="text-2xl font-black text-gray-900 mb-4">
+               {isAdmin ? 'Platform Order Management' : isSeller ? 'Seller Order Management' : 'Looking for your orders?'}
+             </h3>
+             <p className="text-gray-500 mb-8 max-w-md mx-auto">
+               {isAdmin 
+                 ? 'As an Administrator, you can view and manage all customer orders across the entire platform.' 
+                 : isSeller 
+                   ? 'View and fulfill orders placed by customers for your shop products.' 
+                   : 'We have a dedicated page for tracking and managing your purchases.'}
+             </p>
              <button 
-               onClick={() => router.push('/profile/orders')}
+               onClick={() => router.push(isAdmin ? '/admin/dashboard?tab=orders' : isSeller ? '/seller/orders' : '/profile/orders')}
                className="bg-orange-500 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 active:scale-95"
              >
-               Go to My Orders
+               {isAdmin ? 'Manage All Orders' : isSeller ? 'Go to Seller Orders' : 'Go to My Orders'}
              </button>
           </div>
         )}

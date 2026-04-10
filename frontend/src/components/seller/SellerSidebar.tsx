@@ -9,7 +9,8 @@ import {
   Settings, 
   LogOut,
   Store,
-  ChevronRight
+  ChevronRight,
+  User
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,7 +19,8 @@ const menuItems = [
   { name: 'Products', icon: <Package size={20} />, path: '/seller/products' },
   { name: 'Orders', icon: <ShoppingBag size={20} />, path: '/seller/orders' },
   { name: 'Withdrawals', icon: <Wallet size={20} />, path: '/seller/withdrawals' },
-  { name: 'Settings', icon: <Settings size={20} />, path: '/seller/settings' },
+  { name: 'Shop Settings', icon: <Settings size={20} />, path: '/seller/settings' },
+  { name: 'My Profile', icon: <User size={20} />, path: '/profile' },
 ];
 
 export default function SellerSidebar() {

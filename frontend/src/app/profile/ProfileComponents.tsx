@@ -163,17 +163,20 @@ export function EditProfileForm({ user, onUpdated, onCancel }: { user: any; onUp
 export function ChangePasswordForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (form.newPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     if (form.newPassword !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
     setLoading(true);
     try {
       await api.put('/users/password', { currentPassword: form.currentPassword, newPassword: form.newPassword });
-      toast.success('Password updated');
+      toast.success('Password updated successfully');
       onClose();
-    } catch {
-      toast.error('Failed to change password');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Current password might be incorrect');
     } finally {
       setLoading(false);
     }
@@ -183,31 +186,64 @@ export function ChangePasswordForm({ onClose }: { onClose: () => void }) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block ml-1">Current Password</label>
-        <input
-          type="password" value={form.currentPassword}
-          onChange={e => setForm(p => ({ ...p, currentPassword: e.target.value }))}
-          className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 font-bold focus:border-orange-500 focus:bg-white outline-none transition-all"
-        />
+        <div className="relative">
+          <input
+            type={showCurrent ? "text" : "password"} 
+            value={form.currentPassword}
+            onChange={e => setForm(p => ({ ...p, currentPassword: e.target.value }))}
+            className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 font-bold focus:border-orange-500 focus:bg-white outline-none transition-all pr-12"
+            placeholder="••••••••"
+          />
+          <button 
+            type="button" 
+            onClick={() => setShowCurrent(!showCurrent)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+          >
+            {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
       </div>
+
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block ml-1">New Password</label>
-        <input
-          type="password" value={form.newPassword}
-          onChange={e => setForm(p => ({ ...p, newPassword: e.target.value }))}
-          className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 font-bold focus:border-orange-500 focus:bg-white outline-none transition-all"
-        />
+        <div className="relative">
+          <input
+            type={showNew ? "text" : "password"} 
+            value={form.newPassword}
+            onChange={e => setForm(p => ({ ...p, newPassword: e.target.value }))}
+            className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 font-bold focus:border-orange-500 focus:bg-white outline-none transition-all pr-12"
+            placeholder="Minimum 6 characters"
+          />
+          <button 
+            type="button" 
+            onClick={() => setShowNew(!showNew)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+          >
+            {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
       </div>
+
       <div className="space-y-1">
         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block ml-1">Confirm New Password</label>
         <input
           type="password" value={form.confirmPassword}
           onChange={e => setForm(p => ({ ...p, confirmPassword: e.target.value }))}
           className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl px-5 py-4 font-bold focus:border-orange-500 focus:bg-white outline-none transition-all"
+          placeholder="Repeat new password"
         />
       </div>
-      <button type="submit" disabled={loading} className="w-full bg-gray-900 text-white font-black py-4 rounded-2xl shadow-xl">
-        Update Password
-      </button>
+
+      <div className="pt-2">
+        <button 
+          type="submit" 
+          disabled={loading} 
+          className="w-full bg-gray-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-orange-500 transition-all active:scale-95 flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 size={20} className="animate-spin" /> : <Lock size={18} />}
+          Update Password
+        </button>
+      </div>
     </form>
   );
 }

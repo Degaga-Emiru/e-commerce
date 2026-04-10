@@ -30,6 +30,7 @@ public class AdminController {
     private final EscrowRepository escrowRepository;
     private final ShippingService shippingService;
     private final ProductService productService;
+    private final ReviewService reviewService;
 
     public AdminController(UserService userService,
                            OrderService orderService,
@@ -40,7 +41,8 @@ public class AdminController {
                            EscrowService escrowService,
                            EscrowRepository escrowRepository,
                            ShippingService shippingService,
-                           ProductService productService) {
+                           ProductService productService,
+                           ReviewService reviewService) {
         this.userService = userService;
         this.orderService = orderService;
         this.paymentService = paymentService;
@@ -51,6 +53,7 @@ public class AdminController {
         this.escrowRepository = escrowRepository;
         this.shippingService = shippingService;
         this.productService = productService;
+        this.reviewService = reviewService;
     }
 
     @GetMapping("/orders")
@@ -65,6 +68,16 @@ public class AdminController {
                 m.put("finalAmount", o.getFinalAmount());
                 m.put("orderDate", o.getOrderDate());
                 m.put("paymentStatus", o.getPaymentStatus() != null ? o.getPaymentStatus().name() : null);
+                
+                // Address details for tracking history
+                m.put("shippingRecipientName", o.getShippingRecipientName());
+                m.put("shippingStreet", o.getShippingStreet());
+                m.put("shippingCity", o.getShippingCity());
+                m.put("shippingState", o.getShippingState());
+                m.put("shippingZipCode", o.getShippingZipCode());
+                m.put("shippingCountry", o.getShippingCountry());
+                m.put("shippingPhoneNumber", o.getShippingPhoneNumber());
+
                 if (o.getUser() != null) {
                     Map<String, Object> u = new LinkedHashMap<>();
                     u.put("id", o.getUser().getId());
@@ -94,7 +107,7 @@ public class AdminController {
             return ResponseEntity.ok(new ApiResponse<>(true, "All orders retrieved", result));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse<>(false, "Failed to retrieve orders: " + e.getMessage()));
         }
     }
 
@@ -197,7 +210,7 @@ public class AdminController {
             response.put("lastUpdated", LocalDateTime.now());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }
     }
 
@@ -225,7 +238,7 @@ public class AdminController {
             return ResponseEntity.ok(new ApiResponse<>(true, "Escrow records", result));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse<>(false, e.getMessage()));
         }
     }
 
@@ -277,7 +290,7 @@ public class AdminController {
             return ResponseEntity.ok(new ApiResponse<>(true, "All users", result));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse<>(false, e.getMessage()));
         }
     }
 
@@ -306,7 +319,7 @@ public class AdminController {
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }
     }
 
@@ -326,7 +339,7 @@ public class AdminController {
 
             return ResponseEntity.ok(new ApiResponse(true, "Notification sent successfully to all users"));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }
     }
 
@@ -430,6 +443,41 @@ public class AdminController {
             return ResponseEntity.ok(new ApiResponse(true, "Product deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @GetMapping("/reviews")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getAllReviews() {
+        try {
+            List<Map<String, Object>> result = reviewService.getRawReviews().stream().map(r -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", r.getId());
+                m.put("rating", r.getRating());
+                m.put("comment", r.getComment());
+                m.put("createdAt", r.getCreatedAt());
+                m.put("verifiedPurchase", r.getVerifiedPurchase());
+                m.put("productId", r.getProduct() != null ? r.getProduct().getId() : null);
+                m.put("productName", r.getProduct() != null ? r.getProduct().getName() : "Unknown Product");
+                
+                if (r.getUser() != null) {
+                    Map<String, Object> u = new LinkedHashMap<>();
+                    u.put("firstName", r.getUser().getFirstName());
+                    u.put("lastName", r.getUser().getLastName());
+                    m.put("user", u);
+                }
+                
+                if (r.getImages() != null && !r.getImages().isEmpty()) {
+                    m.put("images", r.getImages());
+                }
+                
+                return m;
+            }).collect(Collectors.toList());
+            
+            return ResponseEntity.ok(new ApiResponse(true, "All platform reviews", result));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(new ApiResponse(false, "Failed to load reviews: " + e.getMessage()));
         }
     }
 }

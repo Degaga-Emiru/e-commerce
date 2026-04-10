@@ -200,6 +200,21 @@ public class UserController {
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         dto.setProfilePictureUrl(user.getProfilePictureUrl());
+
+        // Populate primary address from addresses list
+        if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
+            com.ecommerce.ecommerce.entity.Address primary = user.getAddresses().get(0);
+            com.ecommerce.ecommerce.dto.ShippingAddressDto addrDto = new com.ecommerce.ecommerce.dto.ShippingAddressDto();
+            addrDto.setAddressId(primary.getId());
+            addrDto.setStreet(primary.getStreet());
+            addrDto.setCity(primary.getCity());
+            addrDto.setState(primary.getState());
+            addrDto.setZipCode(primary.getZipCode());
+            addrDto.setCountry(primary.getCountry());
+            addrDto.setPhoneNumber(primary.getPhoneNumber());
+            dto.setAddress(addrDto);
+        }
+
         return dto;
     }
 

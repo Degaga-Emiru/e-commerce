@@ -59,13 +59,13 @@ const AdminProfileSection: React.FC = () => {
 
   const quickLinks = [
     { label: 'Admin Dashboard', href: '/admin/dashboard', icon: BarChart2, desc: 'Full platform control center', primary: true },
-    { label: 'Manage Orders', href: '/admin/dashboard', icon: Package, desc: 'View and process all orders' },
-    { label: 'Manage Users', href: '/admin/dashboard', icon: Users, desc: 'Enable/disable user accounts' },
-    { label: 'Manage Sellers', href: '/admin/dashboard', icon: Store, desc: 'Verify and manage sellers' },
-    { label: 'Escrow & Payments', href: '/admin/dashboard', icon: Wallet, desc: 'Release or refund escrow' },
-    { label: 'Shipping', href: '/admin/dashboard', icon: Truck, desc: 'Update order shipping status' },
+    { label: 'Manage Orders', href: '/admin/dashboard?tab=orders', icon: Package, desc: 'View and process all orders' },
+    { label: 'Manage Users', href: '/admin/dashboard?tab=users', icon: Users, desc: 'Enable/disable user accounts' },
+    { label: 'Manage Sellers', href: '/admin/dashboard?tab=sellers', icon: Store, desc: 'Verify and manage sellers' },
+    { label: 'Escrow & Payments', href: '/admin/dashboard?tab=escrow', icon: Wallet, desc: 'Release or refund escrow' },
+    { label: 'Shipping', href: '/admin/dashboard?tab=shipping', icon: Truck, desc: 'Update order shipping status' },
     { label: 'Categories', href: '/admin/categories', icon: Tag, desc: 'Manage product categories' },
-    { label: 'Notifications', href: '/admin/dashboard', icon: Bell, desc: 'Send announcements' },
+    { label: 'Notifications', href: '/admin/dashboard?tab=notifications', icon: Bell, desc: 'Send announcements' },
   ];
 
   return (

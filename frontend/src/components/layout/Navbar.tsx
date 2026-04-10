@@ -100,29 +100,64 @@ const Navbar = () => {
               </Link>
             )}
 
-            <Link href="/wishlist" className="hidden md:flex p-2 text-gray-700 hover:text-orange-500 transition-colors relative flex-col items-center">
-              <div className="relative">
-                <Heart size={24} />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-rose-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-black">
-                    {wishlistCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden lg:block text-[10px] font-bold mt-1">Wishlist</span>
-            </Link>
+            {!isLoading && isAuthenticated && (user?.role === 'CUSTOMER') && (
+              <>
+                <Link href="/wishlist" className="hidden md:flex p-2 text-gray-700 hover:text-orange-500 transition-colors relative flex-col items-center">
+                  <div className="relative">
+                    <Heart size={24} />
+                    {wishlistCount > 0 && (
+                      <span className="absolute -top-1 -right-2 bg-rose-500 text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-black">
+                        {wishlistCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="hidden lg:block text-[10px] font-bold mt-1">Wishlist</span>
+                </Link>
 
-            <Link href="/cart" className="p-2 text-gray-900 hover:text-orange-500 transition-colors relative flex flex-col items-center group">
-              <div className="relative">
-                <ShoppingCart size={28} className="md:w-6 md:h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-orange-500 text-white text-[10px] rounded-full h-5 w-5 md:h-4 md:w-4 flex items-center justify-center font-black group-hover:scale-110 transition-transform shadow-sm">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden lg:block text-[10px] font-bold mt-1">Cart</span>
-            </Link>
+                <Link href="/cart" className="p-2 text-gray-900 hover:text-orange-500 transition-colors relative flex flex-col items-center group">
+                  <div className="relative">
+                    <ShoppingCart size={28} className="md:w-6 md:h-6" />
+                    {cartCount > 0 && (
+                      <span className="absolute -top-1 -right-2 bg-orange-500 text-white text-[10px] rounded-full h-5 w-5 md:h-4 md:w-4 flex items-center justify-center font-black group-hover:scale-110 transition-transform shadow-sm">
+                        {cartCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="hidden lg:block text-[10px] font-bold mt-1">Cart</span>
+                </Link>
+              </>
+            )}
+
+            {!isLoading && isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'SELLER') && (
+              <Link 
+                href={user?.role === 'ADMIN' ? '/admin/dashboard' : '/seller/dashboard'} 
+                className="p-2 text-gray-700 hover:text-orange-500 transition-colors relative flex flex-col items-center group"
+                title="Go to Dashboard"
+              >
+                <div className="p-2 bg-gray-50 rounded-xl group-hover:bg-orange-50 transition-colors">
+                  {user?.role === 'ADMIN' ? <BarChart2 size={24} /> : <Store size={24} />}
+                </div>
+                <span className="hidden lg:block text-[10px] font-bold mt-1 uppercase tracking-tighter">Dashboard</span>
+              </Link>
+            )}
+
+            {!isLoading && !isAuthenticated && (
+              <>
+                <Link href="/wishlist" className="hidden md:flex p-2 text-gray-700 hover:text-orange-500 transition-colors relative flex-col items-center">
+                  <div className="relative">
+                    <Heart size={24} />
+                  </div>
+                  <span className="hidden lg:block text-[10px] font-bold mt-1">Wishlist</span>
+                </Link>
+
+                <Link href="/cart" className="p-2 text-gray-900 hover:text-orange-500 transition-colors relative flex flex-col items-center group">
+                  <div className="relative">
+                    <ShoppingCart size={28} className="md:w-6 md:h-6" />
+                  </div>
+                  <span className="hidden lg:block text-[10px] font-bold mt-1">Cart</span>
+                </Link>
+              </>
+            )}
 
             <div className="hidden md:block p-2">
               <NotificationBell />

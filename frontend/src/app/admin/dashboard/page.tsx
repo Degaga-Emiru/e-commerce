@@ -4,10 +4,13 @@ import api, { shippingApi } from '@/services/api';
 import toast from 'react-hot-toast';
 import {
   BarChart2, Users, ShoppingBag, DollarSign, Package, Truck,
-  Shield, Bell, Settings, Store, CheckCircle, RefreshCw,
+  Shield, Bell, Settings, Store, CheckCircle, RefreshCw, 
   Lock, Unlock, TrendingUp, Send, Search, ExternalLink, Tag,
+  User, LogOut
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Stats {
@@ -82,7 +85,10 @@ function extract(res: any, fallback: any = []) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const [tab, setTab] = useState('overview');
+  const { logout } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [tab, setTab] = useState(searchParams.get('tab') || 'overview');
   const [stats, setStats] = useState<Stats | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [escrows, setEscrows] = useState<Escrow[]>([]);
@@ -148,6 +154,13 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  useEffect(() => {
+    const t = searchParams.get('tab');
+    if (t && TABS.find(x => x.id === t)) {
+      setTab(t);
+    }
+  }, [searchParams]);
 
   const updateShipping = async (orderId: number, status: string) => {
     if (updatingOrderId) return;
@@ -939,9 +952,17 @@ export default function AdminDashboard() {
             </button>
           );
         })}
-        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <button onClick={fetchAll} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: '0.5rem 0.875rem', width: '100%' }}>
+        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <button onClick={fetchAll} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 12, fontWeight: 600, padding: '0.5rem 0.875rem', width: '100%', textAlign: 'left' }}>
             <RefreshCw size={13} /> Refresh All Data
+          </button>
+          
+          <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: '0.7rem 0.875rem', width: '100%', textDecoration: 'none' }}>
+            <User size={15} /> My Profile
+          </Link>
+
+          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 7, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.1)', color: '#f87171', cursor: 'pointer', fontSize: 13, fontWeight: 700, padding: '0.7rem 0.875rem', width: '100%', borderRadius: 10, marginTop: 4 }}>
+            <LogOut size={15} /> Sign Out
           </button>
         </div>
       </div>
