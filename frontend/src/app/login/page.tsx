@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -167,4 +167,14 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default function LoginPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[85vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-orange-500" size={48} />
+      </div>
+    }>
+      <LoginPage />
+    </Suspense>
+  );
+}

@@ -81,13 +81,13 @@ const Navbar = () => {
              {!isLoading && isAuthenticated && (
               <>
                 {user?.role === 'SELLER' && (
-                  <Link href="/seller/dashboard" title="Seller Dashboard" className="hidden md:flex items-center gap-1 text-gray-600 hover:text-orange-500 transition-colors text-sm font-semibold">
-                    <Store size={18} /> Shop
+                  <Link href="/seller/dashboard" title="Seller Dashboard" className="hidden md:flex items-center gap-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors text-xs font-bold px-4 py-2 rounded-full border border-indigo-100">
+                    <Store size={16} /> Seller Dashboard
                   </Link>
                 )}
                 {user?.role === 'ADMIN' && (
-                  <Link href="/admin/dashboard" title="Admin Dashboard" className="hidden md:flex items-center gap-1 text-gray-600 hover:text-orange-500 transition-colors text-sm font-semibold">
-                    <BarChart2 size={18} /> Admin
+                  <Link href="/admin/dashboard" title="Admin Dashboard" className="hidden md:flex items-center gap-1.5 bg-gray-900 text-white hover:bg-gray-800 transition-colors text-xs font-bold px-4 py-2 rounded-full shadow-sm">
+                    <BarChart2 size={16} /> Admin Panel
                   </Link>
                 )}
               </>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import api from '@/services/api';
@@ -121,4 +121,14 @@ const VerifyOtpPage = () => {
   );
 };
 
-export default VerifyOtpPage;
+export default function VerifyOtpWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[85vh] flex items-center justify-center">
+        <Loader2 className="animate-spin text-orange-500" size={48} />
+      </div>
+    }>
+      <VerifyOtpPage />
+    </Suspense>
+  );
+}

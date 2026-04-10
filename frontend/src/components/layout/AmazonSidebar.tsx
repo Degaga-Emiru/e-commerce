@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Home, TrendingUp, Heart, Ticket, ShoppingBag, Settings, LogOut, ChevronRight, Search, ShoppingCart } from 'lucide-react';
+import { X, User, Home, TrendingUp, Heart, Ticket, ShoppingBag, Settings, LogOut, ChevronRight, Search, ShoppingCart, BarChart2, Package, DollarSign, Users, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -106,6 +106,57 @@ const AmazonSidebar: React.FC<Props> = ({ isOpen, onClose, categories }) => {
                   <Search size={20} className="absolute left-4 top-4 text-gray-400" />
                 </form>
               </div>
+
+              {/* Role-Specific Links */}
+              {isAuthenticated && user?.role === 'SELLER' && (
+                <div className="space-y-1 px-4 mb-6 text-gray-900">
+                  <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-4 px-4 font-mono">Seller Tools</h4>
+                  {[
+                    { icon: <BarChart2 size={22} />, label: 'Seller Dashboard', href: '/seller/dashboard' },
+                    { icon: <Package size={22} />, label: 'My Products', href: '/seller/products' },
+                    { icon: <ShoppingBag size={22} />, label: 'Seller Orders', href: '/seller/orders' },
+                    { icon: <DollarSign size={22} />, label: 'Withdrawals', href: '/seller/withdrawals' },
+                  ].map((item) => (
+                    <Link 
+                      key={item.label}
+                      href={item.href}
+                      onClick={onClose}
+                      className="flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-indigo-50 text-gray-900 font-bold transition-all group"
+                    >
+                      <span className="text-indigo-400 group-hover:text-indigo-600 transition-colors">
+                        {item.icon}
+                      </span>
+                      <span className="flex-1 text-sm">{item.label}</span>
+                      <ChevronRight size={16} className="text-gray-100 group-hover:text-indigo-300 transition-colors" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {isAuthenticated && user?.role === 'ADMIN' && (
+                <div className="space-y-1 px-4 mb-6 text-gray-900">
+                  <h4 className="text-[10px] font-black text-violet-400 uppercase tracking-[0.2em] mb-4 px-4 font-mono">Admin Tools</h4>
+                  {[
+                    { icon: <BarChart2 size={22} />, label: 'Admin Dashboard', href: '/admin/dashboard' },
+                    { icon: <Users size={22} />, label: 'Manage Users', href: '/admin/dashboard' },
+                    { icon: <Store size={22} />, label: 'Manage Sellers', href: '/admin/dashboard' },
+                    { icon: <ShoppingBag size={22} />, label: 'All Orders', href: '/admin/dashboard' },
+                  ].map((item) => (
+                    <Link 
+                      key={item.label}
+                      href={item.href}
+                      onClick={onClose}
+                      className="flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-violet-50 text-gray-900 font-bold transition-all group"
+                    >
+                      <span className="text-violet-400 group-hover:text-violet-600 transition-colors">
+                        {item.icon}
+                      </span>
+                      <span className="flex-1 text-sm">{item.label}</span>
+                      <ChevronRight size={16} className="text-gray-100 group-hover:text-violet-300 transition-colors" />
+                    </Link>
+                  ))}
+                </div>
+              )}
 
               <div className="space-y-1 px-4 mb-10 text-gray-900">
                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 px-4 font-mono">Marketplace Tools</h4>

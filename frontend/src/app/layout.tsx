@@ -4,8 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import LayoutShell from "@/components/layout/LayoutShell";
 import { Toaster } from 'react-hot-toast';
 
 const geistSans = Geist({
@@ -35,11 +34,9 @@ export default function RootLayout({
           <CartProvider>
             <WishlistProvider>
               <Toaster position="bottom-right" />
-              <Navbar />
-              <main className="flex-grow">
+              <LayoutShell>
                 {children}
-              </main>
-              <Footer />
+              </LayoutShell>
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>

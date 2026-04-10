@@ -5,7 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import api from '@/services/api';
-import { Loader2, LogOut, Trash2 } from 'lucide-react';
+import { Loader2, LogOut, Trash2, Store, Shield } from 'lucide-react';
+import Link from 'next/link';
 
 // New Components
 import ProfileTabs from '@/components/profile/ProfileTabs';
@@ -14,6 +15,8 @@ import PaymentSection from '@/components/profile/PaymentSection';
 import RefundSection from '@/components/profile/RefundSection';
 import FeedbackSection from '@/components/profile/FeedbackSection';
 import AddressSection from '@/components/profile/AddressSection';
+import SellerProfileSection from '@/components/profile/SellerProfileSection';
+import AdminProfileSection from '@/components/profile/AdminProfileSection';
 
 // Existing Internal Components (Refactored)
 import { 
@@ -49,6 +52,17 @@ export default function ProfilePage() {
   );
   if (!isAuthenticated) return null;
 
+  const userRole = user?.role;
+  const isSeller = userRole === 'SELLER';
+  const isAdmin = userRole === 'ADMIN';
+
+  // Role badge styling
+  const roleBadgeClass = isAdmin
+    ? 'bg-indigo-50 text-indigo-600 border-indigo-100'
+    : isSeller
+      ? 'bg-violet-50 text-violet-600 border-violet-100'
+      : 'bg-orange-50 text-orange-600 border-orange-100';
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {showDeleteDialog && (
@@ -67,9 +81,30 @@ export default function ProfilePage() {
               <p className="text-gray-400 font-medium text-lg">Manage your account settings and track your activities.</p>
               
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
-                <span className="bg-orange-50 text-orange-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-orange-100 shadow-sm">
+                <span className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border shadow-sm ${roleBadgeClass}`}>
+                  {isSeller && <Store size={12} className="inline mr-1 -mt-0.5" />}
+                  {isAdmin && <Shield size={12} className="inline mr-1 -mt-0.5" />}
                   {user?.role} Account
                 </span>
+
+                {/* Quick dashboard link for seller/admin */}
+                {isSeller && (
+                  <Link 
+                    href="/seller/dashboard"
+                    className="flex items-center gap-2 bg-indigo-50 text-indigo-600 font-black text-[10px] uppercase tracking-widest px-4 py-1.5 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                  >
+                    <Store size={12} /> Seller Dashboard
+                  </Link>
+                )}
+                {isAdmin && (
+                  <Link 
+                    href="/admin/dashboard"
+                    className="flex items-center gap-2 bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest px-4 py-1.5 rounded-full hover:bg-gray-800 transition-colors"
+                  >
+                    <Shield size={12} /> Admin Dashboard
+                  </Link>
+                )}
+
                 <button 
                   onClick={() => { logout(); router.push('/'); toast.success('Logged out'); }}
                   className="flex items-center gap-2 text-gray-400 hover:text-rose-500 font-black text-[10px] uppercase tracking-widest transition-colors"
@@ -83,7 +118,7 @@ export default function ProfilePage() {
 
         {/* Navigation Tabs */}
         <div className="max-w-6xl mx-auto px-6">
-          <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} userRole={userRole} />
         </div>
       </div>
 
@@ -99,6 +134,10 @@ export default function ProfilePage() {
             <OverviewSection user={user} onEdit={() => setIsEditing(true)} />
           )
         )}
+
+        {/* Role-specific tabs */}
+        {activeTab === 'seller' && isSeller && <SellerProfileSection />}
+        {activeTab === 'admin' && isAdmin && <AdminProfileSection />}
 
         {activeTab === 'orders' && (
           <div className="text-center py-20 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm">
